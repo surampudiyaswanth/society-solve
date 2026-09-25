@@ -1,0 +1,35 @@
+# Render Blueprint Specification (render.yaml)
+# Enables Auto-Deploy, PR Previews, and Infrastructure-as-Code on Render.com
+
+version: "1"
+
+services:
+  - type: web
+    name: societysolve
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false # Set to your MongoDB Atlas connection string in Render Dashboard
+      - key: JWT_SECRET
+        generateValue: true # Render automatically generates a secure random key
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: CLIENT_URL
+        value: "*"
+      - key: ADMIN_NAME
+        value: "Chief Administrative Officer"
+      - key: ADMIN_EMAIL
+        value: "admin@societysolve.org"
+      - key: ADMIN_PASSWORD
+        generateValue: true

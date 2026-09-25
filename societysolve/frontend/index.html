@@ -1,0 +1,2771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SocietySolve Platform — Connecting People to Solve Problems</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              citizen: '#0284c7', // Sky-600
+              citizenLight: '#e0f2fe',
+              univ: '#059669',    // Emerald-600
+              univLight: '#d1fae5',
+              ind: '#d97706',     // Amber-600
+              indLight: '#fef3c7',
+              admin: '#e11d48',   // Rose-600
+              adminLight: '#ffe4e6',
+              dark: '#0f172a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    /* Donut slice transition effects */
+    .donut-slice {
+      transition: transform 0.25s ease-out, filter 0.25s ease-out, opacity 0.2s;
+      transform-origin: 200px 200px;
+      cursor: pointer;
+    }
+    .donut-slice:hover {
+      transform: scale(1.05);
+      filter: drop-shadow(0 6px 12px rgba(0,0,0,0.25));
+    }
+    
+    /* Pulse for tracking stages */
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(2, 132, 199, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
+    }
+    .active-stage-pulse {
+      animation: pulse-ring 2s infinite;
+    }
+    
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-sky-500 selection:text-white">
+
+  <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 pointer-events-none max-w-sm w-full"></div>
+
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo & Slogan -->
+      <div class="flex items-center gap-3 cursor-pointer" onclick="navigateTo('portal-hub')">
+        <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-sky-600 via-indigo-600 to-rose-600 flex items-center justify-center text-white shadow-md shadow-indigo-100">
+          <i data-lucide="network" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <span class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">SocietySolve</span>
+          <span class="hidden sm:inline-block text-xs font-semibold px-2 py-0.5 ml-2 rounded-full bg-slate-100 text-slate-600 border border-slate-200">Civic-Tech Ecosystem</span>
+        </div>
+      </div>
+
+      <!-- User Session Controls -->
+      <div id="nav-user-bar" class="flex items-center gap-3">
+        <!-- Will be populated dynamically via renderNav() -->
+      </div>
+    </div>
+  </header>
+
+  <main id="app-viewport" class="flex-1 flex flex-col">
+    <!-- Dynamic View Injected Here by State Router -->
+  </main>
+
+  <div id="modal-container" class="relative z-50"></div>
+
+  <!-- Floating Civic AI Chatbot Widget -->
+  <div id="chatbot-container" class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    
+    <!-- Collapsed Chatbot Trigger Button -->
+    <button id="chatbot-toggle-btn" onclick="toggleChatbot()" 
+            class="group relative flex items-center gap-2.5 px-4 py-3.5 rounded-full bg-gradient-to-r from-sky-600 via-indigo-600 to-rose-600 text-white shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300">
+      <span class="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-white"></span>
+      </span>
+      <i data-lucide="bot" class="w-5 h-5 transition-transform group-hover:rotate-12"></i>
+      <span class="text-sm font-bold tracking-tight pr-1">SolveBot Assistant</span>
+    </button>
+
+    <!-- Expanded Chatbot Window (Initially Hidden) -->
+    <div id="chatbot-window" class="hidden w-96 max-w-[calc(100vw-2rem)] h-[540px] max-h-[82vh] bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-fade-in">
+      
+      <!-- Chat Header -->
+      <div class="p-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-3">
+          <div class="relative">
+            <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow">
+              <i data-lucide="bot" class="w-6 h-6"></i>
+            </div>
+            <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-slate-900"></span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h4 class="text-sm font-extrabold text-white">SolveBot</h4>
+              <span id="chat-role-pill" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30">Citizen Mode</span>
+            </div>
+            <p class="text-[11px] text-slate-300 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Online • SocietySolve Civic AI
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-1">
+          <button onclick="toggleChatbot()" class="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Suggestion Pills -->
+      <div class="px-3 py-2 bg-slate-50 border-b border-slate-200 overflow-x-auto whitespace-nowrap flex items-center gap-1.5 text-xs text-slate-600">
+        <button onclick="sendQuickPrompt('How do I report a problem?')" class="px-2.5 py-1 rounded-full bg-white hover:bg-sky-50 text-slate-700 hover:text-sky-700 border border-slate-200 text-[11px] font-semibold transition">
+          Report Issue
+        </button>
+        <button onclick="sendQuickPrompt('Explain the 7 lifecycle stages')" class="px-2.5 py-1 rounded-full bg-white hover:bg-sky-50 text-slate-700 hover:text-sky-700 border border-slate-200 text-[11px] font-semibold transition">
+          7 Stages
+        </button>
+        <button onclick="sendQuickPrompt('How do universities adopt challenges?')" class="px-2.5 py-1 rounded-full bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-200 text-[11px] font-semibold transition">
+          Univ Capstone
+        </button>
+        <button onclick="sendQuickPrompt('How does an industry partner pledge resources?')" class="px-2.5 py-1 rounded-full bg-white hover:bg-amber-50 text-slate-700 hover:text-amber-700 border border-slate-200 text-[11px] font-semibold transition">
+          Industry Pledge
+        </button>
+      </div>
+
+      <!-- Scrollable Message Body -->
+      <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs">
+        <!-- Initial Assistant Message -->
+        <div class="flex items-start gap-2.5">
+          <div class="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <i data-lucide="bot" class="w-4 h-4"></i>
+          </div>
+          <div class="bg-slate-100 p-3 rounded-2xl rounded-tl-sm text-slate-800 max-w-[85%] leading-relaxed">
+            Hello! I am <strong>SolveBot</strong>, your civic resolution assistant. Ask me anything about reporting problems, academic research capstones, corporate sponsorship pledges, or stage tracking!
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Input Field -->
+      <form onsubmit="handleChatSubmit(event)" class="p-3 border-t border-slate-200 bg-white flex items-center gap-2">
+        <input type="text" id="chat-input" placeholder="Type your question or problem ID (e.g. SS-10245)..." autocomplete="off"
+               onkeydown="if(event.key === 'Enter'){ event.preventDefault(); handleChatSubmit(event); }"
+               class="flex-1 px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-slate-800 transition">
+        <button type="submit" id="chat-submit-btn" class="px-3.5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white shadow-sm transition flex items-center justify-center flex-shrink-0">
+          <i data-lucide="send" class="w-4 h-4"></i>
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+  <footer class="bg-slate-900 text-slate-400 text-sm py-8 border-t border-slate-800 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-slate-200">SocietySolve Platform</span>
+        <span>— Connecting Citizens, Academia & Industry</span>
+      </div>
+      <div class="flex items-center gap-6 text-xs text-slate-500">
+        <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Civic Mesh Online</span>
+        <span>Public Administrative Oversight</span>
+        <span>v2.4 LTS</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    /* ==========================================================
+       1. CONSTANTS & CATEGORY DATA
+       ========================================================== */
+    let CATEGORIES = [
+      { id: 'education', name: 'Education', color: '#3B82F6', icon: 'book-open', placeholder: 'e.g. Broken lab computers or lack of STEM equipment at Municipal High School' },
+      { id: 'healthcare', name: 'Healthcare', color: '#10B981', icon: 'heart-pulse', placeholder: 'e.g. Primary Health Centre vaccine cold-chain outage or shortage of diagnostic kits' },
+      { id: 'roads', name: 'Roads & Transportation', color: '#F59E0B', icon: 'bus', placeholder: 'e.g. Major cratered potholes near Market Flyover causing heavy transit congestion' },
+      { id: 'water', name: 'Water', color: '#06B6D4', icon: 'droplet', placeholder: 'e.g. Contaminated drinking supply or burst distribution pipeline in Ward 14' },
+      { id: 'waste', name: 'Waste Management', color: '#8B5CF6', icon: 'trash-2', placeholder: 'e.g. Unsegregated dump site near lake bed requiring biological treatment' },
+      { id: 'environment', name: 'Environment', color: '#14B8A6', icon: 'trees', placeholder: 'e.g. Illegal industrial particulate emissions during nighttime along residential buffer' },
+      { id: 'agriculture', name: 'Agriculture', color: '#84CC16', icon: 'sprout', placeholder: 'e.g. High pest resistance in local onion crop demanding IoT micro-monitoring' },
+      { id: 'safety', name: 'Public Safety', color: '#EF4444', icon: 'shield-alert', placeholder: 'e.g. Dark unlit pedestrian underpasses near industrial corridor' },
+      { id: 'employment', name: 'Employment', color: '#EC4899', icon: 'briefcase', placeholder: 'e.g. Lack of technical skill certification centers for local vocational youth' },
+      { id: 'other', name: 'Other', color: '#64748B', icon: 'help-circle', placeholder: 'e.g. Community civic space revitalization or drainage telemetry requirement' }
+    ];
+
+    const LIFECYCLE_STAGES = [
+      'Submitted',
+      'Under Review',
+      'University Assigned',
+      'Solution Development',
+      'Industry Collaboration',
+      'Implementation',
+      'Completed'
+    ];
+
+    /* ==========================================================
+       2. APPLICATION STATE
+       ========================================================== */
+    const AppState = {
+      currentUser: null, // Populated from MongoDB via JWT
+      currentView: 'portal-hub', // 'portal-hub', 'categories', 'problem-form', 'citizen-tracking', 'univ-dashboard', 'industry-dashboard', 'admin-dashboard'
+      selectedCategory: null,
+      activeProblemTrackingId: null,
+
+      // Live collections retrieved dynamically from backend
+      users: {
+        citizens: [],
+        universities: [],
+        industries: []
+      },
+      problems: [],
+      adminStats: null,
+      isLoading: false
+    };
+
+    /* ==========================================================
+       3. FRONTEND REST API SERVICE
+       ========================================================== */
+    const API_BASE_URL = window.location.origin.includes(':5000') 
+      ? `${window.location.origin}/api` 
+      : 'http://localhost:5000/api';
+
+    const apiService = {
+      tokenKey: 'societysolve_jwt_token',
+      userKey: 'societysolve_current_user',
+
+      getToken() {
+        return localStorage.getItem(this.tokenKey);
+      },
+
+      setSession(token, user) {
+        localStorage.setItem(this.tokenKey, token);
+        localStorage.setItem(this.userKey, JSON.stringify(user));
+        AppState.currentUser = user;
+      },
+
+      clearSession() {
+        localStorage.removeItem(this.tokenKey);
+        localStorage.removeItem(this.userKey);
+        AppState.currentUser = null;
+      },
+
+      async request(endpoint, options = {}) {
+        const headers = { ...(options.headers || {}) };
+        const token = this.getToken();
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        if (!(options.body instanceof FormData) && !headers['Content-Type']) {
+          headers['Content-Type'] = 'application/json';
+        }
+
+        try {
+          const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+            ...options,
+            headers
+          });
+
+          let data;
+          try {
+            data = await res.json();
+          } catch (e) {
+            data = { success: false, message: `Server error (${res.status})` };
+          }
+
+          if (!res.ok) {
+            const errorMsg = data.message || `Request failed (${res.status})`;
+            if (res.status === 401) {
+              this.clearSession();
+              renderNav();
+              navigateTo('portal-hub');
+              showToast(errorMsg, 'warning');
+            } else {
+              showToast(errorMsg, 'error');
+            }
+            throw new Error(errorMsg);
+          }
+
+          return data;
+        } catch (error) {
+          if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            showToast('Backend connection refused. Ensure backend is running at http://localhost:5000', 'error');
+          }
+          throw error;
+        }
+      },
+
+      // Authentication
+      async register(userData) {
+        return await this.request('/auth/register', {
+          method: 'POST',
+          body: JSON.stringify(userData)
+        });
+      },
+
+      async login(credentials) {
+        return await this.request('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify(credentials)
+        });
+      },
+
+      async getMe() {
+        return await this.request('/auth/me', {
+          method: 'GET'
+        });
+      },
+
+      // Problems
+      async getCategories() {
+        return await this.request('/problems/categories', {
+          method: 'GET'
+        });
+      },
+
+      async createProblem(formData) {
+        return await this.request('/problems', {
+          method: 'POST',
+          body: formData
+        });
+      },
+
+      async getMyProblems() {
+        return await this.request('/problems/my', {
+          method: 'GET'
+        });
+      },
+
+      async getProblem(id) {
+        return await this.request(`/problems/${id}`, {
+          method: 'GET'
+        });
+      },
+
+      async updateProblemStatus(id, status, note) {
+        return await this.request(`/problems/${id}/status`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status, note })
+        });
+      },
+
+      // University
+      async getUniversityProblems() {
+        return await this.request('/university/problems', {
+          method: 'GET'
+        });
+      },
+
+      async assignUniversity(id, leadProfessor) {
+        return await this.request(`/university/problems/${id}/assign`, {
+          method: 'PATCH',
+          body: JSON.stringify({ leadProfessor })
+        });
+      },
+
+      async advanceUniversityStage(id, status, note) {
+        return await this.request(`/university/problems/${id}/status`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status, note })
+        });
+      },
+
+      // Industry
+      async getIndustryProblems() {
+        return await this.request('/industry/problems', {
+          method: 'GET'
+        });
+      },
+
+      async submitCollaboration(id, collabData) {
+        return await this.request(`/industry/problems/${id}/collaborate`, {
+          method: 'POST',
+          body: JSON.stringify(collabData)
+        });
+      },
+
+      // Admin
+      async getAdminStatistics() {
+        return await this.request('/admin/statistics', {
+          method: 'GET'
+        });
+      },
+
+      async getAdminUsers() {
+        return await this.request('/admin/users', {
+          method: 'GET'
+        });
+      },
+
+      async getAdminProblems() {
+        return await this.request('/admin/problems', {
+          method: 'GET'
+        });
+      },
+
+      async toggleUserStatus(userId) {
+        return await this.request(`/admin/users/${userId}/status`, {
+          method: 'PATCH'
+        });
+      },
+
+      async verifyProblem(id, status, note) {
+        return await this.request(`/admin/problems/${id}/verify`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status, note })
+        });
+      },
+
+      // Chatbot Assistant
+      async chat(message, role, context = {}) {
+        return await this.request('/chat', {
+          method: 'POST',
+          body: JSON.stringify({
+            message,
+            role: role || (AppState.currentUser ? AppState.currentUser.role : 'citizen'),
+            context
+          })
+        });
+      }
+    };
+
+    /* ==========================================================
+       4. TOAST & NOTIFICATION SYSTEM
+       ========================================================== */
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      const typeStyles = {
+        success: 'bg-emerald-600 text-white border-emerald-700',
+        error: 'bg-rose-600 text-white border-rose-700',
+        info: 'bg-slate-800 text-white border-slate-700',
+        warning: 'bg-amber-600 text-white border-amber-700'
+      };
+
+      const typeIcons = {
+        success: 'check-circle-2',
+        error: 'alert-triangle',
+        info: 'info',
+        warning: 'alert-circle'
+      };
+
+      toast.className = `flex items-center gap-3 p-4 rounded-xl border shadow-xl transform transition-all duration-300 translate-y-2 opacity-0 pointer-events-auto ${typeStyles[type] || typeStyles.info}`;
+      toast.innerHTML = `
+        <i data-lucide="${typeIcons[type] || 'info'}" class="w-5 h-5 flex-shrink-0"></i>
+        <div class="text-sm font-medium flex-1">${message}</div>
+        <button onclick="this.parentElement.remove()" class="text-white/80 hover:text-white ml-2">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      `;
+
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      // Trigger animation
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      // Auto dismiss
+      setTimeout(() => {
+        toast.classList.add('opacity-0', '-translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    /* ==========================================================
+       5. ROUTING & ACCESS GUARDS
+       ========================================================== */
+    async function navigateTo(viewName, params = {}) {
+      // Role protection guards
+      if (viewName === 'categories' || viewName === 'problem-form' || viewName === 'citizen-tracking') {
+        if (!AppState.currentUser || AppState.currentUser.role !== 'citizen') {
+          showToast('Please login as a Citizen to report or track community issues', 'warning');
+          openAuthModal('citizen', 'login');
+          return;
+        }
+      }
+
+      if (viewName === 'univ-dashboard') {
+        if (!AppState.currentUser || AppState.currentUser.role !== 'university') {
+          showToast('University credentials required', 'warning');
+          openAuthModal('university', 'login');
+          return;
+        }
+      }
+
+      if (viewName === 'industry-dashboard') {
+        if (!AppState.currentUser || AppState.currentUser.role !== 'industry') {
+          showToast('Industry partnership credentials required', 'warning');
+          openAuthModal('industry', 'login');
+          return;
+        }
+      }
+
+      if (viewName === 'admin-dashboard') {
+        if (!AppState.currentUser || AppState.currentUser.role !== 'admin') {
+          showToast('Admin clearance required', 'warning');
+          openAuthModal('admin', 'login');
+          return;
+        }
+      }
+
+      // State transitions
+      AppState.currentView = viewName;
+      if (params.category) AppState.selectedCategory = params.category;
+      if (params.problemId) AppState.activeProblemTrackingId = params.problemId;
+
+      renderNav();
+      await renderCurrentView();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function logoutUser() {
+      const prevName = AppState.currentUser ? AppState.currentUser.name : 'User';
+      apiService.clearSession();
+      AppState.selectedCategory = null;
+      AppState.activeProblemTrackingId = null;
+      AppState.problems = [];
+      showToast(`Logged out ${prevName}`, 'info');
+      navigateTo('portal-hub');
+    }
+
+    /* ==========================================================
+       6. VIEW RENDERERS
+       ========================================================== */
+    function renderNav() {
+      const bar = document.getElementById('nav-user-bar');
+      if (!AppState.currentUser) {
+        bar.innerHTML = `
+          <div class="hidden md:flex items-center gap-2 text-xs text-slate-500 mr-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Backend API Connected
+          </div>
+          <button onclick="navigateTo('portal-hub')" class="px-3.5 py-1.5 text-sm font-semibold rounded-lg text-slate-700 hover:bg-slate-100 transition">
+            Portal Directory
+          </button>
+        `;
+      } else {
+        const roleBadges = {
+          citizen: { bg: 'bg-sky-100 text-sky-800 border-sky-300', label: 'Citizen', icon: 'user' },
+          university: { bg: 'bg-emerald-100 text-emerald-800 border-emerald-300', label: 'University', icon: 'graduation-cap' },
+          industry: { bg: 'bg-amber-100 text-amber-800 border-amber-300', label: 'Industry', icon: 'briefcase' },
+          admin: { bg: 'bg-rose-100 text-rose-800 border-rose-300', label: 'Admin', icon: 'shield-check' }
+        };
+        const badge = roleBadges[AppState.currentUser.role] || { bg: 'bg-slate-100 text-slate-800', label: 'User', icon: 'user' };
+
+        let quickAction = '';
+        if (AppState.currentUser.role === 'citizen') {
+          quickAction = `
+            <button onclick="navigateTo('categories')" class="text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white px-3 py-1.5 rounded-lg shadow-sm transition flex items-center gap-1.5">
+              <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Report Issue
+            </button>
+            <button onclick="navigateTo('citizen-tracking')" class="text-xs font-semibold text-slate-600 hover:text-slate-900 px-2 py-1.5 rounded-lg transition">
+              My Issues
+            </button>
+          `;
+        } else if (AppState.currentUser.role === 'university') {
+          quickAction = `
+            <button onclick="navigateTo('univ-dashboard')" class="text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg shadow-sm transition flex items-center gap-1.5">
+              <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i> Univ Dashboard
+            </button>
+          `;
+        } else if (AppState.currentUser.role === 'industry') {
+          quickAction = `
+            <button onclick="navigateTo('industry-dashboard')" class="text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg shadow-sm transition flex items-center gap-1.5">
+              <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i> Industry Console
+            </button>
+          `;
+        } else if (AppState.currentUser.role === 'admin') {
+          quickAction = `
+            <button onclick="navigateTo('admin-dashboard')" class="text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg shadow-sm transition flex items-center gap-1.5">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Admin Console
+            </button>
+          `;
+        }
+
+        bar.innerHTML = `
+          <div class="flex items-center gap-3">
+            ${quickAction}
+            <div class="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border ${badge.bg}">
+              <i data-lucide="${badge.icon}" class="w-3.5 h-3.5"></i>
+              <span>${badge.label}: ${AppState.currentUser.name}</span>
+            </div>
+            <button onclick="logoutUser()" title="Logout" class="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition">
+              <i data-lucide="log-out" class="w-4 h-4"></i>
+            </button>
+          </div>
+        `;
+      }
+      lucide.createIcons();
+    }
+
+    async function renderCurrentView() {
+      const viewport = document.getElementById('app-viewport');
+      
+      switch (AppState.currentView) {
+        case 'portal-hub':
+          viewport.innerHTML = getPortalHubHtml();
+          break;
+
+        case 'categories':
+          viewport.innerHTML = getCategoriesHtml();
+          initDonutInteractions();
+          break;
+
+        case 'problem-form':
+          viewport.innerHTML = getProblemFormHtml();
+          break;
+
+        case 'citizen-tracking':
+          try {
+            viewport.innerHTML = `<div class="py-24 text-center text-slate-400"><i data-lucide="loader-2" class="w-8 h-8 animate-spin mx-auto mb-2 text-sky-600"></i>Loading your civic tickets...</div>`;
+            lucide.createIcons();
+            const res = await apiService.getMyProblems();
+            AppState.problems = res.data || [];
+          } catch (e) {
+            console.error(e);
+          }
+          viewport.innerHTML = getCitizenTrackingHtml();
+          break;
+
+        case 'univ-dashboard':
+          try {
+            viewport.innerHTML = `<div class="py-24 text-center text-slate-400"><i data-lucide="loader-2" class="w-8 h-8 animate-spin mx-auto mb-2 text-emerald-600"></i>Syncing Academic Feasibility Registry...</div>`;
+            lucide.createIcons();
+            const res = await apiService.getUniversityProblems();
+            AppState.problems = res.data || [];
+          } catch (e) {
+            console.error(e);
+          }
+          viewport.innerHTML = getUniversityDashboardHtml();
+          break;
+
+        case 'industry-dashboard':
+          try {
+            viewport.innerHTML = `<div class="py-24 text-center text-slate-400"><i data-lucide="loader-2" class="w-8 h-8 animate-spin mx-auto mb-2 text-amber-600"></i>Loading Corporate Co-sponsorship Directory...</div>`;
+            lucide.createIcons();
+            const res = await apiService.getIndustryProblems();
+            AppState.problems = res.data || [];
+          } catch (e) {
+            console.error(e);
+          }
+          viewport.innerHTML = getIndustryDashboardHtml();
+          break;
+
+        case 'admin-dashboard':
+          try {
+            viewport.innerHTML = `<div class="py-24 text-center text-slate-400"><i data-lucide="loader-2" class="w-8 h-8 animate-spin mx-auto mb-2 text-rose-600"></i>Compiling Municipal Governance Telemetry...</div>`;
+            lucide.createIcons();
+            const [statsRes, usersRes, probsRes] = await Promise.all([
+              apiService.getAdminStatistics(),
+              apiService.getAdminUsers(),
+              apiService.getAdminProblems()
+            ]);
+            AppState.adminStats = statsRes.data;
+            AppState.users = usersRes.data;
+            AppState.problems = probsRes.data || [];
+          } catch (e) {
+            console.error(e);
+          }
+          viewport.innerHTML = getAdminDashboardHtml();
+          renderAdminCharts();
+          break;
+
+        default:
+          viewport.innerHTML = getPortalHubHtml();
+      }
+      lucide.createIcons();
+    }
+
+    function getPortalHubHtml() {
+      return `
+        <div class="bg-gradient-to-b from-slate-100/80 via-white to-slate-50 py-12 lg:py-16">
+          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            <!-- Hero Title Banner -->
+            <div class="text-center max-w-3xl mx-auto mb-14">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 mb-4 shadow-sm">
+                <i data-lucide="zap" class="w-3.5 h-3.5"></i> Multi-Stakeholder Civic Resolution Engine
+              </span>
+              <h1 class="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight mb-4">
+                Connecting People to <span class="bg-gradient-to-r from-sky-600 via-emerald-600 to-indigo-600 bg-clip-text text-transparent">Solve Real Problems</span>
+              </h1>
+              <p class="text-lg text-slate-600 leading-relaxed">
+                SocietySolve unites grassroots citizen reporting with engineering R&D at top universities and industrial manufacturing capabilities under full municipal administrative oversight.
+              </p>
+            </div>
+
+            <!-- 4 Portal Cards Responsive Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+              <!-- Citizen Portal (Sky Blue) -->
+              <div class="bg-white rounded-2xl p-6 border-2 border-sky-100 hover:border-sky-400 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group relative overflow-hidden">
+                <div class="absolute top-0 left-0 right-0 h-1.5 bg-sky-500"></div>
+                <div class="w-14 h-14 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-inner">
+                  <i data-lucide="users" class="w-7 h-7"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">Citizen Portal</h3>
+                <p class="text-sm text-slate-600 mb-6 flex-1">
+                  Report grassroots community problems, upload verified photo/document evidence, and track technical solutions through 7 stages.
+                </p>
+                <div class="space-y-2.5 pt-4 border-t border-slate-100">
+                  <button onclick="openAuthModal('citizen', 'login')" class="w-full py-2.5 px-4 rounded-xl text-sm font-semibold bg-sky-600 hover:bg-sky-700 text-white shadow-md shadow-sky-200 transition flex items-center justify-center gap-2">
+                    <i data-lucide="log-in" class="w-4 h-4"></i> Login as Citizen
+                  </button>
+                  <button onclick="openAuthModal('citizen', 'register')" class="w-full py-2 px-4 rounded-xl text-sm font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 transition flex items-center justify-center gap-2">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i> Register Citizen
+                  </button>
+                </div>
+              </div>
+
+              <!-- University Portal (Emerald Green) -->
+              <div class="bg-white rounded-2xl p-6 border-2 border-emerald-100 hover:border-emerald-400 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group relative overflow-hidden">
+                <div class="absolute top-0 left-0 right-0 h-1.5 bg-emerald-500"></div>
+                <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-inner">
+                  <i data-lucide="graduation-cap" class="w-7 h-7"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">University Portal</h3>
+                <p class="text-sm text-slate-600 mb-6 flex-1">
+                  Adopt verified challenges as engineering capstones, research prototypes, and lead technical validation with faculty & students.
+                </p>
+                <div class="space-y-2.5 pt-4 border-t border-slate-100">
+                  <button onclick="openAuthModal('university', 'login')" class="w-full py-2.5 px-4 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200 transition flex items-center justify-center gap-2">
+                    <i data-lucide="log-in" class="w-4 h-4"></i> Login as University
+                  </button>
+                  <button onclick="openAuthModal('university', 'register')" class="w-full py-2 px-4 rounded-xl text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition flex items-center justify-center gap-2">
+                    <i data-lucide="building-2" class="w-4 h-4"></i> Register Institution
+                  </button>
+                </div>
+              </div>
+
+              <!-- Industry Portal (Amber Orange) -->
+              <div class="bg-white rounded-2xl p-6 border-2 border-amber-100 hover:border-amber-400 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group relative overflow-hidden">
+                <div class="absolute top-0 left-0 right-0 h-1.5 bg-amber-500"></div>
+                <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-inner">
+                  <i data-lucide="briefcase" class="w-7 h-7"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">Industry Portal</h3>
+                <p class="text-sm text-slate-600 mb-6 flex-1">
+                  Pledge CSR funding, donate precision IoT telemetry, manufacture hardware components, and co-sponsor academic deployments.
+                </p>
+                <div class="space-y-2.5 pt-4 border-t border-slate-100">
+                  <button onclick="openAuthModal('industry', 'login')" class="w-full py-2.5 px-4 rounded-xl text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white shadow-md shadow-amber-200 transition flex items-center justify-center gap-2">
+                    <i data-lucide="log-in" class="w-4 h-4"></i> Login as Industry
+                  </button>
+                  <button onclick="openAuthModal('industry', 'register')" class="w-full py-2 px-4 rounded-xl text-sm font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition flex items-center justify-center gap-2">
+                    <i data-lucide="factory" class="w-4 h-4"></i> Register Company
+                  </button>
+                </div>
+              </div>
+
+              <!-- Admin Portal (Rose Red) -->
+              <div class="bg-white rounded-2xl p-6 border-2 border-rose-100 hover:border-rose-400 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group relative overflow-hidden">
+                <div class="absolute top-0 left-0 right-0 h-1.5 bg-rose-500"></div>
+                <div class="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-inner">
+                  <i data-lucide="shield-check" class="w-7 h-7"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">Admin Governance</h3>
+                <p class="text-sm text-slate-600 mb-6 flex-1">
+                  Public municipal and civic network governance. Audit institutional credentials, verify problem integrity, and evaluate systemic progress metrics.
+                </p>
+                <div class="space-y-2.5 pt-4 border-t border-slate-100">
+                  <button onclick="openAuthModal('admin', 'login')" class="w-full py-2.5 px-4 rounded-xl text-sm font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-200 transition flex items-center justify-center gap-2">
+                    <i data-lucide="lock" class="w-4 h-4"></i> Admin Login Only
+                  </button>
+                  <p class="text-center text-xs text-rose-600/80 font-medium py-1">
+                    Strict credential clearance required
+                  </p>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Ecosystem Workflow Highlights -->
+            <div class="mt-16 bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
+              <h4 class="text-sm font-bold tracking-wider uppercase text-slate-400 text-center mb-6">4-Way Tripartite Civic Problem Resolution Model</h4>
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
+                <div class="p-4 rounded-xl bg-sky-50/60 border border-sky-100">
+                  <div class="w-8 h-8 rounded-full bg-sky-600 text-white mx-auto flex items-center justify-center font-bold text-sm mb-2">1</div>
+                  <h5 class="font-bold text-slate-800 text-sm">Citizen Reports</h5>
+                  <p class="text-xs text-slate-500 mt-1">Geo-evidence, water tests, structural photos, priority tags.</p>
+                </div>
+                <div class="p-4 rounded-xl bg-emerald-50/60 border border-emerald-100">
+                  <div class="w-8 h-8 rounded-full bg-emerald-600 text-white mx-auto flex items-center justify-center font-bold text-sm mb-2">2</div>
+                  <h5 class="font-bold text-slate-800 text-sm">Academic R&D</h5>
+                  <p class="text-xs text-slate-500 mt-1">Capstones, prototype blueprints, faculty-led engineering solutions.</p>
+                </div>
+                <div class="p-4 rounded-xl bg-amber-50/60 border border-amber-100">
+                  <div class="w-8 h-8 rounded-full bg-amber-600 text-white mx-auto flex items-center justify-center font-bold text-sm mb-2">3</div>
+                  <h5 class="font-bold text-slate-800 text-sm">Industry Scalability</h5>
+                  <p class="text-xs text-slate-500 mt-1">CSR funding, telemetry sensors, precision fabrication parts.</p>
+                </div>
+                <div class="p-4 rounded-xl bg-rose-50/60 border border-rose-100">
+                  <div class="w-8 h-8 rounded-full bg-rose-600 text-white mx-auto flex items-center justify-center font-bold text-sm mb-2">4</div>
+                  <h5 class="font-bold text-slate-800 text-sm">Admin Delivery</h5>
+                  <p class="text-xs text-slate-500 mt-1">Public authority signoff, inspection audits, permanent deployment.</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      `;
+    }
+
+    function getCategoriesHtml() {
+      // Build 10 mathematically equal arcs (360 / 10 = 36 degrees each)
+      const cx = 200;
+      const cy = 200;
+      const rOuter = 175;
+      const rInner = 105;
+      const sliceAngle = 36;
+      const degToRad = Math.PI / 180;
+
+      let pathsHtml = '';
+
+      CATEGORIES.forEach((cat, index) => {
+        const startDeg = index * sliceAngle;
+        const endDeg = (index + 1) * sliceAngle;
+        const midDeg = (startDeg + endDeg) / 2;
+
+        const startRad = (startDeg - 90) * degToRad;
+        const endRad = (endDeg - 90) * degToRad;
+        const midRad = (midDeg - 90) * degToRad;
+
+        const x1Outer = cx + rOuter * Math.cos(startRad);
+        const y1Outer = cy + rOuter * Math.sin(startRad);
+        const x2Outer = cx + rOuter * Math.cos(endRad);
+        const y2Outer = cy + rOuter * Math.sin(endRad);
+
+        const x1Inner = cx + rInner * Math.cos(endRad);
+        const y1Inner = cy + rInner * Math.sin(endRad);
+        const x2Inner = cx + rInner * Math.cos(startRad);
+        const y2Inner = cy + rInner * Math.sin(startRad);
+
+        const pathD = `M ${x1Outer} ${y1Outer} A ${rOuter} ${rOuter} 0 0 1 ${x2Outer} ${y2Outer} L ${x1Inner} ${y1Inner} A ${rInner} ${rInner} 0 0 0 ${x2Inner} ${y2Inner} Z`;
+
+        const rMid = (rOuter + rInner) / 2;
+        const iconX = cx + rMid * Math.cos(midRad);
+        const iconY = cy + rMid * Math.sin(midRad);
+
+        pathsHtml += `
+          <g class="donut-slice-group" 
+             data-category-id="${cat.id}" 
+             data-category-name="${cat.name}" 
+             data-category-color="${cat.color}"
+             onclick="selectCategoryAndProceed('${cat.id}')">
+            <path d="${pathD}" fill="${cat.color}" stroke="#ffffff" stroke-width="2.5" class="donut-slice"/>
+            <foreignObject x="${iconX - 12}" y="${iconY - 12}" width="24" height="24" class="pointer-events-none">
+              <div xmlns="http://www.w3.org/1999/xhtml" class="w-6 h-6 flex items-center justify-center text-white drop-shadow">
+                <i data-lucide="${cat.icon}" class="w-4 h-4"></i>
+              </div>
+            </foreignObject>
+          </g>
+        `;
+      });
+
+      return `
+        <div class="py-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <!-- Navigation Breadcrumb -->
+          <div class="flex items-center justify-between mb-8 pb-4 border-b border-slate-200">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-sky-600">Citizen Reporting Portal</span>
+              <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Select Problem Domain</h2>
+            </div>
+            <button onclick="navigateTo('citizen-tracking')" class="px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 transition flex items-center gap-2 shadow-sm">
+              <i data-lucide="clock" class="w-4 h-4 text-sky-600"></i> My Submitted Issues
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            
+            <!-- Donut Chart Left Column -->
+            <div class="lg:col-span-7 flex flex-col items-center justify-center p-6 bg-white rounded-3xl border border-slate-200 shadow-sm relative">
+              <div class="relative w-full max-w-[420px] aspect-square flex items-center justify-center">
+                
+                <!-- SVG 10-Equal Slice Donut -->
+                <svg viewBox="0 0 400 400" class="w-full h-full overflow-visible drop-shadow-md">
+                  ${pathsHtml}
+                </svg>
+
+                <!-- Center Donut Overlay -->
+                <div id="donut-center-hub" class="absolute w-36 h-36 rounded-full bg-white shadow-lg border-2 border-slate-200 flex flex-col items-center justify-center text-center p-3 transition-all duration-300 pointer-events-none">
+                  <div class="w-10 h-10 rounded-full bg-sky-50 text-sky-600 flex items-center justify-center mb-1.5 shadow-sm">
+                    <i data-lucide="mouse-pointer-click" class="w-5 h-5 text-sky-600"></i>
+                  </div>
+                  <span class="text-sm font-extrabold text-slate-800 tracking-tight">Click to report</span>
+                </div>
+
+              </div>
+              <p class="text-xs text-slate-400 mt-4 text-center">Interactive 10-Sector Donut — Each domain receives equal 36° deliberation weight.</p>
+            </div>
+
+            <!-- Categories Legend Cards Right Column -->
+            <div class="lg:col-span-5 flex flex-col space-y-2 max-h-[500px] overflow-y-auto pr-1">
+              <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-2">Available Civic Categories</h3>
+              ${CATEGORIES.map(cat => `
+                <div onclick="selectCategoryAndProceed('${cat.id}')" 
+                     class="p-3 bg-white hover:bg-slate-50 rounded-xl border border-slate-200 hover:border-slate-300 transition flex items-center justify-between cursor-pointer group shadow-sm">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm" style="background-color: ${cat.color};">
+                      <i data-lucide="${cat.icon}" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                      <h4 class="text-sm font-bold text-slate-800 group-hover:text-sky-600 transition">${cat.name}</h4>
+                      <p class="text-xs text-slate-400 truncate max-w-[200px] sm:max-w-xs">${cat.placeholder}</p>
+                    </div>
+                  </div>
+                  <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300 group-hover:text-slate-600 transition group-hover:translate-x-1"></i>
+                </div>
+              `).join('')}
+            </div>
+
+          </div>
+        </div>
+      `;
+    }
+
+    function initDonutInteractions() {
+      const groups = document.querySelectorAll('.donut-slice-group');
+      const centerHub = document.getElementById('donut-center-hub');
+
+      groups.forEach(g => {
+        g.addEventListener('mouseenter', () => {
+          const color = g.getAttribute('data-category-color');
+          if (centerHub) {
+            centerHub.style.borderColor = color;
+            centerHub.style.boxShadow = `0 10px 25px -5px ${color}33`;
+          }
+        });
+
+        g.addEventListener('mouseleave', () => {
+          if (centerHub) {
+            centerHub.style.borderColor = '#e2e8f0';
+            centerHub.style.boxShadow = '';
+          }
+        });
+      });
+    }
+
+    function selectCategoryAndProceed(categoryId) {
+      const cat = CATEGORIES.find(c => c.id === categoryId);
+      if (!cat) return;
+      AppState.selectedCategory = cat;
+      showToast(`Selected category: ${cat.name}`, 'info');
+      navigateTo('problem-form');
+    }
+
+    function getProblemFormHtml() {
+      const cat = AppState.selectedCategory || CATEGORIES[0];
+
+      return `
+        <div class="py-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <!-- Back Navigation Button -->
+          <div class="mb-6">
+            <button onclick="navigateTo('categories')" class="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-4 py-2 rounded-xl shadow-sm hover:bg-slate-50 transition">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Categories
+            </button>
+          </div>
+
+          <!-- Locked Category Banner -->
+          <div class="rounded-2xl p-5 mb-8 text-white flex items-center justify-between shadow-lg" style="background-color: ${cat.color};">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center text-white">
+                <i data-lucide="${cat.icon}" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <span class="text-xs uppercase font-extrabold tracking-wider text-white/80">Category Verification Banner (Locked)</span>
+                <h2 class="text-2xl font-black">${cat.name}</h2>
+              </div>
+            </div>
+            <div class="hidden sm:block text-right text-xs text-white/80">
+              <span>Domain Classification Active</span>
+            </div>
+          </div>
+
+          <!-- Problem Submission Form Card -->
+          <form id="problem-submission-form" onsubmit="handleProblemSubmit(event)" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
+            
+            <!-- Problem Title -->
+            <div>
+              <label class="block text-sm font-bold text-slate-800 mb-2">Problem Title <span class="text-rose-500">*</span></label>
+              <input type="text" id="form-title" required placeholder="${cat.placeholder}" 
+                     class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-slate-800 text-sm transition">
+              <p class="text-xs text-slate-400 mt-1">Provide a concise headline identifying the critical failure or community issue.</p>
+            </div>
+
+            <!-- Problem Description -->
+            <div>
+              <label class="block text-sm font-bold text-slate-800 mb-2">Describe the Problem & Impact <span class="text-rose-500">*</span></label>
+              <textarea id="form-desc" rows="4" required placeholder="Explain specific symptoms, duration, number of citizens affected, and any previous municipal inquiries..." 
+                        class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-slate-800 text-sm transition"></textarea>
+            </div>
+
+            <!-- Location / Ward / GPS -->
+            <div>
+              <label class="block text-sm font-bold text-slate-800 mb-2">Location / Ward / GPS Reference <span class="text-rose-500">*</span></label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <i data-lucide="map-pin" class="w-4 h-4"></i>
+                </span>
+                <input type="text" id="form-location" required placeholder="e.g., Ward 14, Opposite Water Works, Lat 17.6868, Long 83.2185" 
+                       class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-slate-800 text-sm transition">
+              </div>
+            </div>
+
+            <!-- Priority Selector -->
+            <div>
+              <label class="block text-sm font-bold text-slate-800 mb-2">Problem Urgency & Priority <span class="text-rose-500">*</span></label>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <label class="cursor-pointer border rounded-xl p-3 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition border-slate-200 has-[:checked]:border-slate-800 has-[:checked]:bg-slate-50 has-[:checked]:ring-1 has-[:checked]:ring-slate-800">
+                  <input type="radio" name="priority" value="Low" class="sr-only">
+                  <span class="w-2.5 h-2.5 rounded-full bg-slate-400 mb-1.5"></span>
+                  <span class="text-xs font-bold text-slate-700">Low</span>
+                  <span class="text-[10px] text-slate-400">> 30 days</span>
+                </label>
+                <label class="cursor-pointer border rounded-xl p-3 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition border-slate-200 has-[:checked]:border-sky-600 has-[:checked]:bg-sky-50 has-[:checked]:ring-1 has-[:checked]:ring-sky-600">
+                  <input type="radio" name="priority" value="Medium" checked class="sr-only">
+                  <span class="w-2.5 h-2.5 rounded-full bg-sky-500 mb-1.5"></span>
+                  <span class="text-xs font-bold text-slate-700">Medium</span>
+                  <span class="text-[10px] text-slate-400">14-30 days</span>
+                </label>
+                <label class="cursor-pointer border rounded-xl p-3 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition border-slate-200 has-[:checked]:border-amber-600 has-[:checked]:bg-amber-50 has-[:checked]:ring-1 has-[:checked]:ring-amber-600">
+                  <input type="radio" name="priority" value="High" class="sr-only">
+                  <span class="w-2.5 h-2.5 rounded-full bg-amber-500 mb-1.5"></span>
+                  <span class="text-xs font-bold text-slate-700">High</span>
+                  <span class="text-[10px] text-slate-400">3-7 days</span>
+                </label>
+                <label class="cursor-pointer border rounded-xl p-3 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition border-slate-200 has-[:checked]:border-rose-600 has-[:checked]:bg-rose-50 has-[:checked]:ring-1 has-[:checked]:ring-rose-600">
+                  <input type="radio" name="priority" value="Critical" class="sr-only">
+                  <span class="w-2.5 h-2.5 rounded-full bg-rose-500 mb-1.5"></span>
+                  <span class="text-xs font-bold text-slate-700">Critical</span>
+                  <span class="text-[10px] text-slate-400">Immediate Hazard</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Uploads Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Upload Image -->
+              <div>
+                <label class="block text-sm font-bold text-slate-800 mb-2">Upload Photo Evidence</label>
+                <div class="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center hover:border-sky-500 transition cursor-pointer relative bg-slate-50/50">
+                  <input type="file" id="form-image" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" onchange="previewUploadName(this, 'photo-filename')">
+                  <i data-lucide="camera" class="w-6 h-6 text-slate-400 mx-auto mb-1"></i>
+                  <p id="photo-filename" class="text-xs font-semibold text-slate-700">Click or drag photo</p>
+                  <p class="text-[10px] text-slate-400">JPG, PNG, WebP up to 10MB</p>
+                </div>
+              </div>
+
+              <!-- Upload Document -->
+              <div>
+                <label class="block text-sm font-bold text-slate-800 mb-2">Upload Document (Optional)</label>
+                <div class="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center hover:border-sky-500 transition cursor-pointer relative bg-slate-50/50">
+                  <input type="file" id="form-doc" accept=".pdf,.doc,.docx" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" onchange="previewUploadName(this, 'doc-filename')">
+                  <i data-lucide="file-text" class="w-6 h-6 text-slate-400 mx-auto mb-1"></i>
+                  <p id="doc-filename" class="text-xs font-semibold text-slate-700">Lab test, report or petition</p>
+                  <p class="text-[10px] text-slate-400">PDF, DOC, DOCX up to 10MB</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Community Contacts -->
+            <div>
+              <label class="block text-sm font-bold text-slate-800 mb-2">Community Contacts & References</label>
+              <input type="text" id="form-contacts" placeholder="e.g. Resident Association Secretary, Ward Council Contact" 
+                     class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-slate-800 text-sm transition">
+            </div>
+
+            <!-- Actions -->
+            <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+              <button type="button" onclick="navigateTo('categories')" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition">
+                Cancel
+              </button>
+              <button type="submit" id="submit-prob-btn" class="px-7 py-3 rounded-xl text-sm font-bold bg-sky-600 hover:bg-sky-700 text-white shadow-lg shadow-sky-200 transition flex items-center gap-2">
+                <i data-lucide="send" class="w-4 h-4"></i> Submit Problem to Network
+              </button>
+            </div>
+
+          </form>
+        </div>
+      `;
+    }
+
+    function previewUploadName(input, labelId) {
+      const label = document.getElementById(labelId);
+      if (input.files && input.files[0]) {
+        label.textContent = `Selected: ${input.files[0].name}`;
+        label.classList.add('text-sky-600');
+      }
+    }
+
+    async function handleProblemSubmit(event) {
+      event.preventDefault();
+
+      const title = document.getElementById('form-title').value.trim();
+      const desc = document.getElementById('form-desc').value.trim();
+      const location = document.getElementById('form-location').value.trim();
+      const contacts = document.getElementById('form-contacts').value.trim() || 'Not specified';
+      const priority = document.querySelector('input[name="priority"]:checked')?.value || 'Medium';
+
+      if (!title || !desc || !location) {
+        showToast('Please fill all mandatory fields', 'error');
+        return;
+      }
+
+      const cat = AppState.selectedCategory || CATEGORIES[0];
+      const submitBtn = document.getElementById('submit-prob-btn');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Registering Ticket...`;
+        lucide.createIcons();
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append('category', cat.id);
+        formData.append('title', title);
+        formData.append('description', desc);
+        formData.append('location', location);
+        formData.append('priority', priority);
+        formData.append('contacts', contacts);
+
+        const imgInput = document.getElementById('form-image');
+        if (imgInput && imgInput.files[0]) {
+          formData.append('imageEvidence', imgInput.files[0]);
+        }
+
+        const docInput = document.getElementById('form-doc');
+        if (docInput && docInput.files[0]) {
+          formData.append('documentEvidence', docInput.files[0]);
+        }
+
+        const response = await apiService.createProblem(formData);
+        const createdProblem = response.data;
+
+        AppState.activeProblemTrackingId = createdProblem.problemId || createdProblem.id;
+
+        // Render Confirmation Modal
+        openSubmissionConfirmationModal(createdProblem);
+        showToast('Civic problem committed to MongoDB ledger', 'success');
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `<i data-lucide="send" class="w-4 h-4"></i> Submit Problem to Network`;
+          lucide.createIcons();
+        }
+      }
+    }
+
+    function openSubmissionConfirmationModal(problem) {
+      const modalContainer = document.getElementById('modal-container');
+      const ticketId = problem.problemId || problem.id;
+
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 text-center relative">
+            <div class="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4 shadow-inner">
+              <i data-lucide="check-circle" class="w-8 h-8"></i>
+            </div>
+            
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-600">Problem Registered Successfully</span>
+            <h3 class="text-2xl font-black text-slate-900 mt-1 mb-2">Cryptographic Ticket Generated</h3>
+            
+            <div class="my-4 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+              <div class="text-xs text-slate-400 font-semibold mb-1">UNIQUE PROBLEM IDENTIFIER</div>
+              <div class="text-2xl font-mono font-black text-sky-600 tracking-wider">${ticketId}</div>
+              <div class="text-xs text-slate-500 mt-2 font-medium truncate">${problem.title}</div>
+            </div>
+
+            <p class="text-xs text-slate-600 mb-6 leading-relaxed">
+              Your issue has been committed to the SocietySolve public directory in MongoDB. Academic capstone teams and municipal reviewers have received telemetry notifications.
+            </p>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+              <button onclick="closeModal(); navigateTo('categories')" class="w-full py-3 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition">
+                Report Another
+              </button>
+              <button onclick="closeModal(); navigateTo('citizen-tracking', { problemId: '${ticketId}' })" class="w-full py-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-sm font-bold shadow-md shadow-sky-200 transition flex items-center justify-center gap-2">
+                <i data-lucide="activity" class="w-4 h-4"></i> Track Problem Progress
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    function getCitizenTrackingHtml() {
+      let problem = AppState.problems.find(p => (p.problemId || p.id) === AppState.activeProblemTrackingId);
+      if (!problem && AppState.problems.length > 0) {
+        problem = AppState.problems[0];
+        AppState.activeProblemTrackingId = problem.problemId || problem.id;
+      }
+
+      if (!problem) {
+        return `
+          <div class="py-16 text-center max-w-md mx-auto px-4">
+            <i data-lucide="inbox" class="w-12 h-12 text-slate-300 mx-auto mb-4"></i>
+            <h3 class="text-xl font-bold text-slate-800">No Problems Reported Yet</h3>
+            <p class="text-sm text-slate-500 mt-2 mb-6">Select a category from the 10-slice interactive donut chart to log your first civic challenge.</p>
+            <button onclick="navigateTo('categories')" class="px-6 py-3 rounded-xl bg-sky-600 text-white font-bold text-sm shadow-md">
+              Open Category Donut
+            </button>
+          </div>
+        `;
+      }
+
+      const currentStageIndex = LIFECYCLE_STAGES.indexOf(problem.status);
+      const cat = CATEGORIES.find(c => c.id === problem.category) || CATEGORIES[0];
+      const ticketId = problem.problemId || problem.id;
+
+      return `
+        <div class="py-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <!-- Tracking Header & Selector -->
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-slate-200">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-sky-600">7-Stage End-to-End Problem Lifecycle</span>
+              <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
+                Tracking: <span class="font-mono text-sky-600">${ticketId}</span>
+              </h2>
+            </div>
+            
+            <!-- Switch Problem Dropdown -->
+            <div class="flex items-center gap-3">
+              <span class="text-xs font-semibold text-slate-500 whitespace-nowrap">Switch Problem:</span>
+              <select onchange="switchTrackedProblem(this.value)" class="px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-sky-500 outline-none shadow-sm max-w-xs">
+                ${AppState.problems.map(p => {
+                  const pId = p.problemId || p.id;
+                  return `<option value="${pId}" ${pId === ticketId ? 'selected' : ''}>${pId} — ${p.title.substring(0, 32)}...</option>`;
+                }).join('')}
+              </select>
+            </div>
+          </div>
+
+          <!-- Problem Metadata Summary Card -->
+          <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm mb-10">
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+              <div class="flex items-center gap-3">
+                <span class="px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm flex items-center gap-1.5" style="background-color: ${cat.color};">
+                  <i data-lucide="${cat.icon}" class="w-3.5 h-3.5"></i> ${cat.name}
+                </span>
+                <span class="px-3 py-1 rounded-full text-xs font-bold ${getPriorityBadgeClass(problem.priority)}">
+                  ${problem.priority} Priority
+                </span>
+                <span class="text-xs text-slate-400">Logged on ${problem.submittedAt}</span>
+              </div>
+              <div class="text-xs text-slate-500 font-medium">
+                Reporter: <span class="text-slate-800 font-bold">${problem.submittedByName ? `${problem.submittedByName} (${problem.submittedByEmail})` : (problem.submittedBy || 'Citizen Reporter')}</span>
+              </div>
+            </div>
+            <h3 class="text-2xl font-extrabold text-slate-900 mb-3">${problem.title}</h3>
+            <p class="text-sm text-slate-600 leading-relaxed mb-6">${problem.description}</p>
+
+            ${(problem.imageEvidence || problem.documentEvidence) ? `
+              <div class="flex flex-wrap items-center gap-4 mb-6 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <span class="text-xs font-bold text-slate-500">Verified Evidence:</span>
+                ${problem.imageEvidence ? `
+                  <a href="${problem.imageEvidence}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 text-sky-700 text-xs font-semibold hover:bg-sky-100 border border-sky-200">
+                    <i data-lucide="image" class="w-3.5 h-3.5"></i> View Photo Evidence
+                  </a>
+                ` : ''}
+                ${problem.documentEvidence ? `
+                  <a href="${problem.documentEvidence}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-semibold hover:bg-indigo-100 border border-indigo-200">
+                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Download Attached Dossier
+                  </a>
+                ` : ''}
+              </div>
+            ` : ''}
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <div>
+                <span class="font-bold text-slate-500 block">Exact Location / Ward:</span>
+                <span class="text-slate-800 font-medium">${problem.location}</span>
+              </div>
+              <div>
+                <span class="font-bold text-slate-500 block">Technical Lead University:</span>
+                <span class="text-slate-800 font-medium">${problem.assignedUniversity || 'Pending Academic Feasibility Review'}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 7-Stage Horizontal Stepper with Pulse -->
+          <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm mb-10">
+            <h4 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-8">Solution Progress Pipeline (7 Stages)</h4>
+            
+            <div class="overflow-x-auto pb-4">
+              <div class="min-w-[760px] flex items-center justify-between relative">
+                
+                <!-- Background Connection Bar -->
+                <div class="absolute top-5 left-8 right-8 h-1 bg-slate-200 z-0"></div>
+                <!-- Active Filled Bar -->
+                <div class="absolute top-5 left-8 h-1 bg-sky-600 z-0 transition-all duration-500" 
+                     style="width: ${(currentStageIndex / (LIFECYCLE_STAGES.length - 1)) * 88}%;"></div>
+
+                <!-- 7 Lifecycle Nodes -->
+                ${LIFECYCLE_STAGES.map((stage, idx) => {
+                  const isCompleted = idx < currentStageIndex;
+                  const isCurrent = idx === currentStageIndex;
+
+                  let nodeClasses = 'w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm z-10 transition-all ';
+                  if (isCompleted) {
+                    nodeClasses += 'bg-emerald-600 text-white shadow-md shadow-emerald-200';
+                  } else if (isCurrent) {
+                    nodeClasses += 'bg-sky-600 text-white active-stage-pulse scale-110 shadow-lg shadow-sky-300';
+                  } else {
+                    nodeClasses += 'bg-white border-2 border-slate-300 text-slate-400';
+                  }
+
+                  return `
+                    <div class="flex flex-col items-center text-center max-w-[100px] z-10">
+                      <div class="${nodeClasses}">
+                        ${isCompleted ? '<i data-lucide="check" class="w-5 h-5"></i>' : (idx + 1)}
+                      </div>
+                      <span class="text-xs font-bold mt-3 leading-tight ${isCurrent ? 'text-sky-700 font-extrabold' : (isCompleted ? 'text-slate-800' : 'text-slate-400')}">
+                        ${stage}
+                      </span>
+                      ${isCurrent ? '<span class="text-[10px] font-semibold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full mt-1 border border-sky-200">Current</span>' : ''}
+                    </div>
+                  `;
+                }).join('')}
+
+              </div>
+            </div>
+          </div>
+
+          <!-- Chronological Milestone History & Collaborator Logs -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Milestones Ledger (lg:col-span-7) -->
+            <div class="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm">
+              <h4 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-6">Milestone Audit Log</h4>
+              <div class="relative border-l-2 border-slate-200 ml-4 space-y-6">
+                ${(problem.milestones || []).map((m, idx) => `
+                  <div class="relative pl-6">
+                    <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full border-2 border-white ${idx === (problem.milestones.length - 1) ? 'bg-sky-600' : 'bg-emerald-500'}"></div>
+                    <div class="text-xs font-bold text-sky-700">${m.stage} • <span class="text-slate-400 font-normal">${m.date}</span></div>
+                    <p class="text-sm text-slate-700 font-medium mt-1 leading-relaxed">${m.note}</p>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- Stakeholders & Industry Backing (lg:col-span-5) -->
+            <div class="lg:col-span-5 space-y-6">
+              
+              <!-- University Lead Card -->
+              <div class="bg-emerald-50/70 border border-emerald-200 rounded-3xl p-6">
+                <div class="flex items-center gap-3 mb-3 text-emerald-800">
+                  <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
+                    <i data-lucide="graduation-cap" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-600">Academic R&D Sponsor</span>
+                    <h5 class="text-base font-extrabold text-slate-900">${problem.assignedUniversity || 'Awaiting Capstone Assignment'}</h5>
+                  </div>
+                </div>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                  ${problem.leadProfessor ? `Directed by: <span class="font-bold text-slate-800">${problem.leadProfessor}</span>` : 'Academic institutions conduct feasibility reviews to validate engineering scope.'}
+                </p>
+              </div>
+
+              <!-- Industry Pledges Ledger -->
+              <div class="bg-amber-50/70 border border-amber-200 rounded-3xl p-6">
+                <div class="flex items-center gap-3 mb-3 text-amber-800">
+                  <div class="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center">
+                    <i data-lucide="briefcase" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <span class="text-xs font-extrabold uppercase tracking-wider text-amber-600">Corporate & IoT Collaborators</span>
+                    <h5 class="text-base font-extrabold text-slate-900">${(problem.collaborators || []).length} Industry Partner(s) Linked</h5>
+                  </div>
+                </div>
+                ${(!problem.collaborators || problem.collaborators.length === 0) ? `
+                  <p class="text-xs text-slate-500">No industrial pledges recorded yet. Available in the Industry Portal registry.</p>
+                ` : `
+                  <div class="space-y-3 mt-2">
+                    ${problem.collaborators.map(c => `
+                      <div class="p-3 bg-white/90 rounded-xl border border-amber-100 text-xs">
+                        <div class="font-bold text-slate-900">${c.companyName}</div>
+                        <div class="text-amber-800 font-semibold mt-0.5">${c.resources}</div>
+                        <div class="text-slate-600 mt-1">${c.techContribution}</div>
+                      </div>
+                    `).join('')}
+                  </div>
+                `}
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      `;
+    }
+
+    function switchTrackedProblem(id) {
+      AppState.activeProblemTrackingId = id;
+      renderCurrentView();
+    }
+
+    function getPriorityBadgeClass(priority) {
+      switch (priority) {
+        case 'Critical': return 'bg-rose-100 text-rose-800 border border-rose-200';
+        case 'High': return 'bg-amber-100 text-amber-800 border border-amber-200';
+        case 'Medium': return 'bg-sky-100 text-sky-800 border border-sky-200';
+        default: return 'bg-slate-100 text-slate-800 border border-slate-200';
+      }
+    }
+
+    function getUniversityDashboardHtml() {
+      const univ = AppState.currentUser;
+      const totalProblems = AppState.problems.length;
+      const underReviewCount = AppState.problems.filter(p => p.status === 'Under Review' || p.status === 'Submitted').length;
+      const acceptedCount = AppState.problems.filter(p => p.assignedUniversity === univ.name).length;
+      const activeProjectsCount = AppState.problems.filter(p => p.assignedUniversity === univ.name && p.status !== 'Completed').length;
+      const completedCount = AppState.problems.filter(p => p.assignedUniversity === univ.name && p.status === 'Completed').length;
+      const collaborationsCount = AppState.problems.filter(p => p.assignedUniversity === univ.name && (p.collaborators || []).length > 0).length;
+
+      return `
+        <div class="py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <!-- University Profile Bar -->
+          <div class="bg-gradient-to-r from-emerald-800 to-teal-900 text-white rounded-3xl p-6 sm:p-8 mb-8 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div class="flex items-center gap-4">
+              <div class="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center text-white border border-white/20 shadow-inner">
+                <i data-lucide="graduation-cap" class="w-9 h-9"></i>
+              </div>
+              <div>
+                <span class="text-xs uppercase font-extrabold tracking-wider text-emerald-300">Verified Academic R&D Lead</span>
+                <h2 class="text-2xl sm:text-3xl font-black">${univ.name}</h2>
+                <div class="text-xs text-emerald-200 flex items-center gap-3 mt-1">
+                  <span><i data-lucide="map-pin" class="w-3.5 h-3.5 inline"></i> ${univ.location || 'Campus Tech Hub'}</span>
+                  <span><i data-lucide="mail" class="w-3.5 h-3.5 inline"></i> ${univ.email}</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="renderCurrentView()" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold backdrop-blur border border-white/20 transition">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5 inline mr-1"></i> Refresh Problems
+              </button>
+            </div>
+          </div>
+
+          <!-- University 6 Metrics Grid -->
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-10">
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="text-xs text-slate-400 font-bold uppercase">New Challenges</div>
+              <div class="text-2xl font-black text-slate-900 mt-1">${totalProblems}</div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="text-xs text-amber-600 font-bold uppercase">Under Review</div>
+              <div class="text-2xl font-black text-amber-600 mt-1">${underReviewCount}</div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="text-xs text-emerald-600 font-bold uppercase">Accepted by Us</div>
+              <div class="text-2xl font-black text-emerald-600 mt-1">${acceptedCount}</div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="text-xs text-sky-600 font-bold uppercase">Active Projects</div>
+              <div class="text-2xl font-black text-sky-600 mt-1">${activeProjectsCount}</div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="text-xs text-indigo-600 font-bold uppercase">Collaborations</div>
+              <div class="text-2xl font-black text-indigo-600 mt-1">${collaborationsCount}</div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="text-xs text-teal-600 font-bold uppercase">Completed</div>
+              <div class="text-2xl font-black text-teal-600 mt-1">${completedCount}</div>
+            </div>
+          </div>
+
+          <!-- Citizen Problems Directory & Review Console -->
+          <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden mb-12">
+            <div class="p-6 sm:p-8 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h3 class="text-xl font-bold text-slate-900">Citizen Problems Directory & Feasibility Screening</h3>
+                <p class="text-xs text-slate-500 mt-1">Review verified community problems, accept engineering capstones, and advance solution lifecycles.</p>
+              </div>
+            </div>
+
+            <div class="divide-y divide-slate-200">
+              ${AppState.problems.map(prob => {
+                const isAdoptedByThisUniv = prob.assignedUniversity === univ.name;
+                const canAccept = !prob.assignedUniversity;
+                const cat = CATEGORIES.find(c => c.id === prob.category) || CATEGORIES[0];
+                const pId = prob.problemId || prob.id;
+
+                return `
+                  <div class="p-6 hover:bg-slate-50 transition flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                    <div class="space-y-2 flex-1">
+                      <div class="flex flex-wrap items-center gap-2.5">
+                        <span class="font-mono text-xs font-black text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded border">${pId}</span>
+                        <span class="text-xs font-bold px-2.5 py-0.5 rounded-full text-white" style="background-color: ${cat.color};">${cat.name}</span>
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-full ${getPriorityBadgeClass(prob.priority)}">${prob.priority}</span>
+                        <span class="text-xs font-semibold text-slate-500">Status: <strong class="text-slate-800">${prob.status}</strong></span>
+                      </div>
+                      <h4 class="text-base font-extrabold text-slate-900">${prob.title}</h4>
+                      <p class="text-xs text-slate-600 line-clamp-2">${prob.description}</p>
+                      <div class="text-xs text-slate-400 flex items-center gap-4">
+                        <span><i data-lucide="map-pin" class="w-3.5 h-3.5 inline"></i> ${prob.location}</span>
+                        <span><i data-lucide="clock" class="w-3.5 h-3.5 inline"></i> ${prob.submittedAt}</span>
+                      </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex flex-wrap items-center gap-2">
+                      <button onclick="openUniversityReviewModal('${pId}')" class="px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-300 text-slate-700 hover:bg-slate-100 transition">
+                        Feasibility Details
+                      </button>
+
+                      ${canAccept ? `
+                        <button onclick="acceptChallengeAsTechnicalLead('${pId}')" class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200 transition flex items-center gap-1.5">
+                          <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Accept as Tech Lead
+                        </button>
+                      ` : (isAdoptedByThisUniv ? `
+                        <div class="flex items-center gap-1.5">
+                          <span class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-xl">
+                            Our Capstone
+                          </span>
+                          <button onclick="openStageAdvanceModal('${pId}')" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white transition flex items-center gap-1.5 shadow-sm">
+                            <i data-lucide="fast-forward" class="w-3.5 h-3.5"></i> Advance Stage
+                          </button>
+                        </div>
+                      ` : `
+                        <span class="text-xs text-slate-400 italic">Adopted by: ${prob.assignedUniversity}</span>
+                      `)}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+        </div>
+      `;
+    }
+
+    async function acceptChallengeAsTechnicalLead(problemId) {
+      try {
+        await apiService.assignUniversity(problemId, 'Faculty Research Committee / Capstone Team');
+        showToast(`Challenge ${problemId} successfully adopted!`, 'success');
+        await renderCurrentView();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function openStageAdvanceModal(problemId) {
+      const prob = AppState.problems.find(p => (p.problemId || p.id) === problemId);
+      if (!prob) return;
+
+      const availableStages = ['Solution Development', 'Industry Collaboration', 'Implementation', 'Completed'];
+
+      const modalContainer = document.getElementById('modal-container');
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100">
+            <h3 class="text-xl font-bold text-slate-900 mb-1">Advance Project Stage</h3>
+            <p class="text-xs text-slate-500 mb-4">Problem: <strong class="text-slate-800">${problemId}</strong> — Current: <strong class="text-sky-600">${prob.status}</strong></p>
+
+            <form onsubmit="handleAdvanceStageSubmit(event, '${problemId}')" class="space-y-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Select Next Target Lifecycle Stage</label>
+                <select id="advance-stage-select" class="w-full px-3 py-2.5 text-sm font-semibold border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
+                  ${availableStages.map(st => `
+                    <option value="${st}" ${st === prob.status ? 'disabled' : ''}>${st}</option>
+                  `).join('')}
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Milestone Progress Note</label>
+                <textarea id="advance-stage-note" required rows="3" placeholder="Describe prototype results, trial data, or deployment updates..." 
+                          class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+              </div>
+
+              <div class="flex items-center justify-end gap-2 pt-2">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+                <button type="submit" class="px-5 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md">Confirm Transition</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    async function handleAdvanceStageSubmit(event, problemId) {
+      event.preventDefault();
+      const newStage = document.getElementById('advance-stage-select').value;
+      const note = document.getElementById('advance-stage-note').value.trim();
+
+      try {
+        await apiService.advanceUniversityStage(problemId, newStage, note);
+        closeModal();
+        showToast(`Updated ${problemId} to stage: ${newStage}`, 'success');
+        await renderCurrentView();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function openUniversityReviewModal(problemId) {
+      const prob = AppState.problems.find(p => (p.problemId || p.id) === problemId);
+      if (!prob) return;
+      const cat = CATEGORIES.find(c => c.id === prob.category) || CATEGORIES[0];
+      const pId = prob.problemId || prob.id;
+
+      const modalContainer = document.getElementById('modal-container');
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+            
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-xs font-bold uppercase tracking-wider text-emerald-600">Academic Feasibility Dossier</span>
+              <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700">
+                <i data-lucide="x" class="w-5 h-5"></i>
+              </button>
+            </div>
+
+            <div class="flex items-center gap-2 mb-2">
+              <span class="font-mono text-xs font-black bg-slate-100 px-2 py-0.5 rounded">${pId}</span>
+              <span class="text-xs font-bold text-white px-2.5 py-0.5 rounded-full" style="background-color: ${cat.color};">${cat.name}</span>
+              <span class="text-xs font-bold px-2 py-0.5 rounded-full ${getPriorityBadgeClass(prob.priority)}">${prob.priority}</span>
+            </div>
+
+            <h3 class="text-xl font-bold text-slate-900 mb-3">${prob.title}</h3>
+            <p class="text-sm text-slate-700 leading-relaxed mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-100">${prob.description}</p>
+
+            ${(prob.imageEvidence || prob.documentEvidence) ? `
+              <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 mb-6 flex flex-wrap gap-3">
+                ${prob.imageEvidence ? `<a href="${prob.imageEvidence}" target="_blank" class="px-3 py-1.5 rounded-lg bg-sky-50 text-sky-700 font-bold text-xs border border-sky-200 inline-flex items-center gap-1.5"><i data-lucide="image" class="w-3.5 h-3.5"></i> View Attached Photo</a>` : ''}
+                ${prob.documentEvidence ? `<a href="${prob.documentEvidence}" target="_blank" class="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 font-bold text-xs border border-indigo-200 inline-flex items-center gap-1.5"><i data-lucide="file-text" class="w-3.5 h-3.5"></i> Download PDF/DOC</a>` : ''}
+              </div>
+            ` : ''}
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs mb-6">
+              <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <strong class="text-slate-500 block mb-1">Reporter Information:</strong>
+                <span class="text-slate-800">${prob.submittedByName ? `${prob.submittedByName} (${prob.submittedByEmail})` : (prob.submittedBy || 'Citizen')}</span>
+              </div>
+              <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <strong class="text-slate-500 block mb-1">Location Coordinates:</strong>
+                <span class="text-slate-800">${prob.location}</span>
+              </div>
+            </div>
+
+            <div class="border-t border-slate-100 pt-4 flex items-center justify-end gap-3">
+              <button onclick="closeModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Close Dossier</button>
+            </div>
+
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    function getIndustryDashboardHtml() {
+      const ind = AppState.currentUser;
+      const availableChallenges = AppState.problems.filter(p => p.assignedUniversity && p.status !== 'Completed').length;
+      const activeCollabs = AppState.problems.filter(p => (p.collaborators || []).some(c => c.companyName === ind.name)).length;
+      const completedDeployments = AppState.problems.filter(p => (p.collaborators || []).some(c => c.companyName === ind.name) && p.status === 'Completed').length;
+
+      return `
+        <div class="py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <!-- Industry Banner -->
+          <div class="bg-gradient-to-r from-amber-700 via-amber-800 to-orange-900 text-white rounded-3xl p-6 sm:p-8 mb-8 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div class="flex items-center gap-4">
+              <div class="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center text-white border border-white/20 shadow-inner">
+                <i data-lucide="briefcase" class="w-9 h-9"></i>
+              </div>
+              <div>
+                <span class="text-xs uppercase font-extrabold tracking-wider text-amber-300">Verified Corporate CSR & Tech Partner</span>
+                <h2 class="text-2xl sm:text-3xl font-black">${ind.name}</h2>
+                <div class="text-xs text-amber-200 flex items-center gap-3 mt-1">
+                  <span><i data-lucide="factory" class="w-3.5 h-3.5 inline"></i> ${ind.sector || 'Advanced Tech Solutions'}</span>
+                  <span><i data-lucide="map-pin" class="w-3.5 h-3.5 inline"></i> ${ind.headquarters || ind.hq || 'Corporate Headquarters'}</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <span class="px-3.5 py-1.5 rounded-full text-xs font-bold bg-white/10 border border-white/20">CSR Allocation Active</span>
+            </div>
+          </div>
+
+          <!-- Industry Metrics -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="text-xs text-slate-400 font-bold uppercase">Available Initiatives</div>
+              <div class="text-3xl font-black text-slate-900 mt-1">${availableChallenges}</div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="text-xs text-amber-600 font-bold uppercase">Active Collaborations</div>
+              <div class="text-3xl font-black text-amber-600 mt-1">${activeCollabs}</div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="text-xs text-sky-600 font-bold uppercase">Ongoing Projects</div>
+              <div class="text-3xl font-black text-sky-600 mt-1">${activeCollabs}</div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="text-xs text-emerald-600 font-bold uppercase">Completed Deployments</div>
+              <div class="text-3xl font-black text-emerald-600 mt-1">${completedDeployments}</div>
+            </div>
+          </div>
+
+          <!-- Available Academic Initiatives Directory -->
+          <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden mb-12">
+            <div class="p-6 sm:p-8 border-b border-slate-200">
+              <h3 class="text-xl font-bold text-slate-900">Academic Initiatives Seeking Industrial Co-Sponsorship</h3>
+              <p class="text-xs text-slate-500 mt-1">Pledge precision manufacturing capacity, sensor kits, or CSR development funding.</p>
+            </div>
+
+            <div class="divide-y divide-slate-200">
+              ${AppState.problems.map(prob => {
+                const hasPledged = (prob.collaborators || []).some(c => c.companyName === ind.name);
+                const cat = CATEGORIES.find(c => c.id === prob.category) || CATEGORIES[0];
+                const pId = prob.problemId || prob.id;
+
+                return `
+                  <div class="p-6 hover:bg-slate-50 transition flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                    <div class="space-y-2 flex-1">
+                      <div class="flex flex-wrap items-center gap-2.5">
+                        <span class="font-mono text-xs font-black text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded border">${pId}</span>
+                        <span class="text-xs font-bold px-2.5 py-0.5 rounded-full text-white" style="background-color: ${cat.color};">${cat.name}</span>
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-full ${getPriorityBadgeClass(prob.priority)}">${prob.priority}</span>
+                        <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-200">
+                          Lead: ${prob.assignedUniversity || 'Open for Capstone'}
+                        </span>
+                      </div>
+                      <h4 class="text-base font-extrabold text-slate-900">${prob.title}</h4>
+                      <p class="text-xs text-slate-600 line-clamp-2">${prob.description}</p>
+                      
+                      ${(prob.collaborators && prob.collaborators.length > 0) ? `
+                        <div class="text-xs text-amber-700 font-semibold flex items-center gap-1.5 mt-1">
+                          <i data-lucide="handshake" class="w-3.5 h-3.5"></i> Co-sponsors: ${prob.collaborators.map(c => c.companyName).join(', ')}
+                        </div>
+                      ` : ''}
+                    </div>
+
+                    <!-- Action Button -->
+                    <div>
+                      ${hasPledged ? `
+                        <span class="px-4 py-2 rounded-xl text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 inline-flex items-center gap-1.5">
+                          <i data-lucide="check" class="w-3.5 h-3.5"></i> Pledge Active
+                        </span>
+                      ` : `
+                        <button onclick="openCollaborationModal('${pId}')" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-md shadow-amber-200 transition flex items-center gap-1.5">
+                          <i data-lucide="plus-circle" class="w-4 h-4"></i> Join Collaboration
+                        </button>
+                      `}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+        </div>
+      `;
+    }
+
+    function openCollaborationModal(problemId) {
+      const prob = AppState.problems.find(p => (p.problemId || p.id) === problemId);
+      if (!prob) return;
+
+      const modalContainer = document.getElementById('modal-container');
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold uppercase tracking-wider text-amber-600">Industrial Partnership Pledge</span>
+              <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700">
+                <i data-lucide="x" class="w-5 h-5"></i>
+              </button>
+            </div>
+
+            <h3 class="text-xl font-bold text-slate-900 mb-1">Sponsor Initiative: ${problemId}</h3>
+            <p class="text-xs text-slate-500 mb-4">${prob.title}</p>
+
+            <form onsubmit="handleCollaborationSubmit(event, '${problemId}')" class="space-y-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Pledged Resources & Funding Budget</label>
+                <input type="text" id="collab-resources" required placeholder="e.g. $15,000 in sensor components or 200kg piping alloy" 
+                       class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 outline-none">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Specific Technological Contribution</label>
+                <input type="text" id="collab-tech" required placeholder="e.g. Precision CNC manufacturing, solar kits, LTE telemetry" 
+                       class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 outline-none">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Recommendations & Suggestions for Academic Team</label>
+                <textarea id="collab-recom" rows="3" placeholder="Provide design constraints, manufacturing tolerances, or certification specs..." 
+                          class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 outline-none"></textarea>
+              </div>
+
+              <div class="flex items-center justify-end gap-3 pt-2">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+                <button type="submit" class="px-6 py-2.5 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-md shadow-amber-200">
+                  Commit Industrial Pledge
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    async function handleCollaborationSubmit(event, problemId) {
+      event.preventDefault();
+
+      const resources = document.getElementById('collab-resources').value.trim();
+      const tech = document.getElementById('collab-tech').value.trim();
+      const recom = document.getElementById('collab-recom').value.trim();
+
+      try {
+        await apiService.submitCollaboration(problemId, {
+          resources,
+          techContribution: tech,
+          recommendations: recom
+        });
+
+        closeModal();
+        showToast(`Pledged resources for ${problemId} confirmed!`, 'success');
+        await renderCurrentView();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function getAdminDashboardHtml() {
+      const stats = AppState.adminStats || {
+        totalCitizens: (AppState.users.citizens || []).length,
+        totalUniversities: (AppState.users.universities || []).length,
+        totalIndustries: (AppState.users.industries || []).length,
+        totalProblems: AppState.problems.length,
+        activeProblems: AppState.problems.filter(p => p.status !== 'Completed').length,
+        completedProblems: AppState.problems.filter(p => p.status === 'Completed').length,
+        totalCollaborations: AppState.problems.reduce((acc, p) => acc + (p.collaborators ? p.collaborators.length : 0), 0)
+      };
+
+      const citizensList = AppState.users.citizens || [];
+      const univsList = AppState.users.universities || [];
+      const problemsList = AppState.problems || [];
+
+      return `
+        <div class="py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <!-- Admin Header -->
+          <div class="bg-gradient-to-r from-rose-900 via-rose-800 to-slate-900 text-white rounded-3xl p-6 sm:p-8 mb-8 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div class="flex items-center gap-4">
+              <div class="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center text-white border border-white/20 shadow-inner">
+                <i data-lucide="shield-check" class="w-9 h-9"></i>
+              </div>
+              <div>
+                <span class="text-xs uppercase font-extrabold tracking-wider text-rose-300">Public Authority Governance Console</span>
+                <h2 class="text-2xl sm:text-3xl font-black">Chief Administrative Audit</h2>
+                <div class="text-xs text-rose-200 flex items-center gap-3 mt-1">
+                  <span><i data-lucide="lock" class="w-3.5 h-3.5 inline"></i> Municipal Oversight Clearance</span>
+                  <span><i data-lucide="check-check" class="w-3.5 h-3.5 inline"></i> MongoDB Persistent Ledger Online</span>
+                </div>
+              </div>
+            </div>
+            <button onclick="showToast('Exported official audit telemetry CSV', 'info')" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold backdrop-blur border border-white/20 transition">
+              <i data-lucide="download" class="w-3.5 h-3.5 inline mr-1"></i> Export Full Audit CSV
+            </button>
+          </div>
+
+          <!-- Admin Metrics Grid -->
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-10">
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="text-xs text-sky-600 font-bold uppercase">Total Citizens</div>
+              <div class="text-2xl font-black text-slate-900 mt-1">${stats.totalCitizens}</div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="text-xs text-emerald-600 font-bold uppercase">Universities</div>
+              <div class="text-2xl font-black text-slate-900 mt-1">${stats.totalUniversities}</div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="text-xs text-amber-600 font-bold uppercase">Industries</div>
+              <div class="text-2xl font-black text-slate-900 mt-1">${stats.totalIndustries}</div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="text-xs text-slate-400 font-bold uppercase">Total Problems</div>
+              <div class="text-2xl font-black text-slate-900 mt-1">${stats.totalProblems}</div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="text-xs text-rose-600 font-bold uppercase">Active vs Done</div>
+              <div class="text-2xl font-black text-rose-600 mt-1">${stats.activeProblems} / ${stats.completedProblems}</div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="text-xs text-indigo-600 font-bold uppercase">Collaborations</div>
+              <div class="text-2xl font-black text-indigo-600 mt-1">${stats.totalCollaborations}</div>
+            </div>
+          </div>
+
+          <!-- Analytics & Reports Section -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            
+            <!-- Real Live Problem Distribution Per Category Bar Chart -->
+            <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm">
+              <h4 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-6">Live Problem Distribution per Category</h4>
+              <div id="admin-category-bars" class="space-y-3">
+                <!-- Injected via renderAdminCharts() -->
+              </div>
+            </div>
+
+            <!-- Lifecycle Stage Dispersion -->
+            <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm">
+              <h4 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-6">Dispersion Across 7 Solution Lifecycle Stages</h4>
+              <div id="admin-stage-dispersion" class="space-y-3">
+                <!-- Injected via renderAdminCharts() -->
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Stakeholder Auditing Tables -->
+          <div class="space-y-8 mb-12">
+            
+            <!-- Citizen Registry -->
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+              <div class="p-6 border-b border-slate-200 flex items-center justify-between">
+                <h4 class="font-bold text-slate-900 text-base">Citizen Registry</h4>
+                <span class="text-xs text-slate-500">${citizensList.length} Registered Citizens</span>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-slate-50 text-slate-400 uppercase font-bold border-b border-slate-200">
+                    <tr>
+                      <th class="p-4">Citizen Name</th>
+                      <th class="p-4">Email</th>
+                      <th class="p-4">Phone</th>
+                      <th class="p-4">Problems Reported</th>
+                      <th class="p-4">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100">
+                    ${citizensList.map(c => `
+                      <tr class="hover:bg-slate-50">
+                        <td class="p-4 font-bold text-slate-800">${c.name}</td>
+                        <td class="p-4 text-slate-600">${c.email}</td>
+                        <td class="p-4 text-slate-500">${c.phone || 'N/A'}</td>
+                        <td class="p-4 font-bold text-sky-600">${c.problemsReported || 0} issue(s)</td>
+                        <td class="p-4"><span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">${c.status || 'Active'}</span></td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- University Directory with Toggle -->
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+              <div class="p-6 border-b border-slate-200 flex items-center justify-between">
+                <h4 class="font-bold text-slate-900 text-base">University Directory & Lab Clearances</h4>
+                <span class="text-xs text-slate-500">${univsList.length} Institutions</span>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-slate-50 text-slate-400 uppercase font-bold border-b border-slate-200">
+                    <tr>
+                      <th class="p-4">Institution Name</th>
+                      <th class="p-4">Campus Location</th>
+                      <th class="p-4">Official Email</th>
+                      <th class="p-4">Department Tags</th>
+                      <th class="p-4">Activation</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100">
+                    ${univsList.map(u => `
+                      <tr class="hover:bg-slate-50">
+                        <td class="p-4 font-bold text-slate-800">${u.name}</td>
+                        <td class="p-4 text-slate-600">${u.location || 'Main Campus'}</td>
+                        <td class="p-4 text-slate-500">${u.email}</td>
+                        <td class="p-4">
+                          <div class="flex flex-wrap gap-1">
+                            ${(u.departments || ['Engineering']).map(d => `<span class="bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded text-[10px] font-semibold">${d}</span>`).join('')}
+                          </div>
+                        </td>
+                        <td class="p-4">
+                          <button onclick="toggleUniversityStatus('${u._id || u.id}')" class="px-3 py-1 rounded-lg font-bold text-xs ${u.status === 'Active' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-rose-100 text-rose-800 border border-rose-300'}">
+                            ${u.status || 'Active'} (Toggle)
+                          </button>
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Problem Management Table with Audit Inspection -->
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+              <div class="p-6 border-b border-slate-200 flex items-center justify-between">
+                <h4 class="font-bold text-slate-900 text-base">Municipal Civic Problems Master Audit Ledger</h4>
+                <span class="text-xs text-slate-500">${problemsList.length} Challenges</span>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-slate-50 text-slate-400 uppercase font-bold border-b border-slate-200">
+                    <tr>
+                      <th class="p-4">ID</th>
+                      <th class="p-4">Category</th>
+                      <th class="p-4">Title</th>
+                      <th class="p-4">Priority</th>
+                      <th class="p-4">Assigned University</th>
+                      <th class="p-4">Status</th>
+                      <th class="p-4 text-right">Audit</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100">
+                    ${problemsList.map(p => {
+                      const pId = p.problemId || p.id;
+                      return `
+                        <tr class="hover:bg-slate-50">
+                          <td class="p-4 font-mono font-bold text-sky-600">${pId}</td>
+                          <td class="p-4 font-semibold text-slate-700 capitalize">${p.category}</td>
+                          <td class="p-4 font-bold text-slate-800 max-w-xs truncate">${p.title}</td>
+                          <td class="p-4"><span class="px-2 py-0.5 rounded-full font-bold ${getPriorityBadgeClass(p.priority)}">${p.priority}</span></td>
+                          <td class="p-4 text-slate-600">${p.assignedUniversity || '<span class="text-slate-400 italic">Unassigned</span>'}</td>
+                          <td class="p-4 font-bold text-slate-700">${p.status}</td>
+                          <td class="p-4 text-right">
+                            <button onclick="openUniversityReviewModal('${pId}')" class="px-3 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700">
+                              Inspect
+                            </button>
+                          </td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      `;
+    }
+
+    async function toggleUniversityStatus(userId) {
+      try {
+        await apiService.toggleUserStatus(userId);
+        showToast('Account status updated in MongoDB', 'info');
+        await renderCurrentView();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderAdminCharts() {
+      // Category counts (Real MongoDB aggregation)
+      const catContainer = document.getElementById('admin-category-bars');
+      if (catContainer) {
+        const catCounts = (AppState.adminStats && AppState.adminStats.categoryCounts) || {};
+        CATEGORIES.forEach(c => {
+          if (catCounts[c.id] === undefined) catCounts[c.id] = 0;
+        });
+
+        const maxCount = Math.max(...Object.values(catCounts), 1);
+
+        catContainer.innerHTML = CATEGORIES.map(cat => {
+          const count = catCounts[cat.id] || 0;
+          const pct = Math.round((count / maxCount) * 100);
+
+          return `
+            <div class="space-y-1">
+              <div class="flex items-center justify-between text-xs font-bold text-slate-700">
+                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background-color: ${cat.color}"></span> ${cat.name}</span>
+                <span>${count} problem(s)</span>
+              </div>
+              <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-500" style="width: ${pct}%; background-color: ${cat.color};"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Stage dispersion
+      const stageContainer = document.getElementById('admin-stage-dispersion');
+      if (stageContainer) {
+        const stageCounts = (AppState.adminStats && AppState.adminStats.stageCounts) || {};
+        LIFECYCLE_STAGES.forEach(s => {
+          if (stageCounts[s] === undefined) stageCounts[s] = 0;
+        });
+
+        const maxStage = Math.max(...Object.values(stageCounts), 1);
+
+        stageContainer.innerHTML = LIFECYCLE_STAGES.map((st, idx) => {
+          const count = stageCounts[st] || 0;
+          const pct = Math.round((count / maxStage) * 100);
+
+          return `
+            <div class="space-y-1">
+              <div class="flex items-center justify-between text-xs font-bold text-slate-700">
+                <span>Stage ${idx + 1}: ${st}</span>
+                <span class="text-sky-600">${count}</span>
+              </div>
+              <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div class="bg-sky-600 h-full rounded-full transition-all duration-500" style="width: ${pct}%;"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    /* ==========================================================
+       7. MODALS & AUTHENTICATION FORMS
+       ========================================================== */
+    function openAuthModal(portalType, mode = 'login') {
+      const modalContainer = document.getElementById('modal-container');
+
+      const portalConfig = {
+        citizen: {
+          title: 'Citizen Portal Access',
+          color: 'bg-sky-600',
+          textColor: 'text-sky-600',
+          borderColor: 'border-sky-500',
+          icon: 'users'
+        },
+        university: {
+          title: 'University R&D Portal Access',
+          color: 'bg-emerald-600',
+          textColor: 'text-emerald-600',
+          borderColor: 'border-emerald-500',
+          icon: 'graduation-cap'
+        },
+        industry: {
+          title: 'Industry Co-Sponsorship Portal Access',
+          color: 'bg-amber-600',
+          textColor: 'text-amber-600',
+          borderColor: 'border-amber-500',
+          icon: 'briefcase'
+        },
+        admin: {
+          title: 'Municipal Governance Clearance',
+          color: 'bg-rose-600',
+          textColor: 'text-rose-600',
+          borderColor: 'border-rose-500',
+          icon: 'shield-check'
+        }
+      };
+
+      const cfg = portalConfig[portalType] || portalConfig.citizen;
+      let formHtml = '';
+
+      if (portalType === 'admin') {
+        // Admin: Login only
+        formHtml = `
+          <form onsubmit="handleAdminLogin(event)" class="space-y-4">
+            <div class="bg-rose-50 border border-rose-200 p-3 rounded-xl text-xs text-rose-800">
+              Pre-provisioned Admin Clearance: <strong class="block mt-0.5">admin@societysolve.org / Admin@12345</strong>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Administrative Email</label>
+              <input type="email" id="auth-admin-email" value="admin@societysolve.org" required class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-rose-500 outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Security Passcode</label>
+              <input type="password" id="auth-admin-pass" value="Admin@12345" required class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-rose-500 outline-none">
+            </div>
+            <button type="submit" id="admin-login-btn" class="w-full py-3 rounded-xl text-sm font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-200 transition">
+              Verify Administrative Clearance
+            </button>
+          </form>
+        `;
+      } else if (mode === 'login') {
+        // Standard Login
+        let defaultEmail = 'ananya@citizen.org';
+        if (portalType === 'university') defaultEmail = 'director@nit.edu';
+        if (portalType === 'industry') defaultEmail = 'csr@apexdynamics.com';
+
+        formHtml = `
+          <form onsubmit="handleAuthLogin(event, '${portalType}')" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
+              <input type="email" id="auth-login-email" value="${defaultEmail}" required class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:ring-2 ${cfg.borderColor} outline-none">
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-xs font-bold text-slate-700">Password</label>
+                <button type="button" onclick="showToast('Password reset instructions available through admin portal', 'info')" class="text-xs text-sky-600 hover:underline">Forgot password?</button>
+              </div>
+              <input type="password" id="auth-login-pass" value="Password@123" required class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:ring-2 ${cfg.borderColor} outline-none">
+            </div>
+            <button type="submit" id="auth-login-btn" class="w-full py-3 rounded-xl text-sm font-bold ${cfg.color} text-white shadow-md transition">
+              Login as ${portalType.charAt(0).toUpperCase() + portalType.slice(1)}
+            </button>
+            <div class="text-center pt-2">
+              <span class="text-xs text-slate-500">Need an account?</span>
+              <button type="button" onclick="openAuthModal('${portalType}', 'register')" class="text-xs font-bold ${cfg.textColor} ml-1 hover:underline">Register now</button>
+            </div>
+          </form>
+        `;
+      } else {
+        // Register Form
+        if (portalType === 'citizen') {
+          formHtml = `
+            <form onsubmit="handleCitizenRegister(event)" class="space-y-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Full Name</label>
+                <input type="text" id="reg-c-name" required placeholder="e.g. Vikramaditya Rao" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-sky-500">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
+                <input type="email" id="reg-c-email" required placeholder="vikram@citizen.org" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-sky-500">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Phone Number</label>
+                <input type="tel" id="reg-c-phone" required placeholder="+91 98765 00000" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-sky-500">
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Password</label>
+                  <input type="password" id="reg-c-pass" required value="Password@123" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Confirm</label>
+                  <input type="password" id="reg-c-pass2" required value="Password@123" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+              </div>
+              <button type="submit" id="reg-c-btn" class="w-full py-3 rounded-xl text-sm font-bold bg-sky-600 hover:bg-sky-700 text-white shadow-md shadow-sky-200 mt-2">
+                Register Citizen Profile
+              </button>
+              <div class="text-center pt-1">
+                <span class="text-xs text-slate-500">Already registered?</span>
+                <button type="button" onclick="openAuthModal('citizen', 'login')" class="text-xs font-bold text-sky-600 ml-1 hover:underline">Login here</button>
+              </div>
+            </form>
+          `;
+        } else if (portalType === 'university') {
+          formHtml = `
+            <form onsubmit="handleUniversityRegister(event)" class="space-y-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">University / Institute Name</label>
+                <input type="text" id="reg-u-name" required placeholder="e.g. Apex Institute of Technology" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-emerald-500">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Campus Location</label>
+                <input type="text" id="reg-u-loc" required placeholder="e.g. City Campus North" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-emerald-500">
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Official Email</label>
+                  <input type="email" id="reg-u-email" required placeholder="rnd@institute.edu" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Website URL</label>
+                  <input type="url" id="reg-u-web" required placeholder="https://institute.edu" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Phone</label>
+                  <input type="tel" id="reg-u-phone" required placeholder="+91 22 2455 0000" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Password</label>
+                  <input type="password" id="reg-u-pass" required value="Password@123" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+              </div>
+              <button type="submit" id="reg-u-btn" class="w-full py-3 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200 mt-2">
+                Register Academic Institution
+              </button>
+            </form>
+          `;
+        } else if (portalType === 'industry') {
+          formHtml = `
+            <form onsubmit="handleIndustryRegister(event)" class="space-y-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Company / Corporate Entity Name</label>
+                <input type="text" id="reg-i-name" required placeholder="e.g. TerraWatt Renewables Corp" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-amber-500">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Industry Sector</label>
+                <input type="text" id="reg-i-sector" required placeholder="e.g. CleanTech, Heavy Fabrication, IoT Telemetry" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-amber-500">
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Headquarters</label>
+                  <input type="text" id="reg-i-hq" required placeholder="e.g. Tower 3, Cyber Gateway" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Corporate Email</label>
+                  <input type="email" id="reg-i-email" required placeholder="csr@terrawatt.com" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Phone</label>
+                  <input type="tel" id="reg-i-phone" required placeholder="+91 80 4122 3344" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Password</label>
+                  <input type="password" id="reg-i-pass" required value="Password@123" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+              </div>
+              <button type="submit" id="reg-i-btn" class="w-full py-3 rounded-xl text-sm font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-md shadow-amber-200 mt-2">
+                Register Corporate Partner
+              </button>
+            </form>
+          `;
+        }
+      }
+
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 relative">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg ${cfg.color} text-white flex items-center justify-center">
+                  <i data-lucide="${cfg.icon}" class="w-4 h-4"></i>
+                </div>
+                <h3 class="text-base font-black text-slate-900">${cfg.title}</h3>
+              </div>
+              <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700">
+                <i data-lucide="x" class="w-5 h-5"></i>
+              </button>
+            </div>
+            ${formHtml}
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    function closeModal() {
+      const modalContainer = document.getElementById('modal-container');
+      modalContainer.innerHTML = '';
+    }
+
+    async function handleAuthLogin(event, portalType) {
+      event.preventDefault();
+      const email = document.getElementById('auth-login-email').value.trim();
+      const password = document.getElementById('auth-login-pass').value;
+      const btn = document.getElementById('auth-login-btn');
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Authenticating...`;
+        lucide.createIcons();
+      }
+
+      try {
+        const res = await apiService.login({ email, password, role: portalType });
+        apiService.setSession(res.token, res.user);
+        closeModal();
+        showToast(`Welcome back, ${res.user.name}!`, 'success');
+
+        if (portalType === 'citizen') {
+          navigateTo('categories');
+        } else if (portalType === 'university') {
+          navigateTo('univ-dashboard');
+        } else if (portalType === 'industry') {
+          navigateTo('industry-dashboard');
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `Login as ${portalType.charAt(0).toUpperCase() + portalType.slice(1)}`;
+        }
+      }
+    }
+
+    async function handleAdminLogin(event) {
+      event.preventDefault();
+      const email = document.getElementById('auth-admin-email').value.trim();
+      const password = document.getElementById('auth-admin-pass').value;
+      const btn = document.getElementById('admin-login-btn');
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Verifying Clearance...`;
+        lucide.createIcons();
+      }
+
+      try {
+        const res = await apiService.login({ email, password, role: 'admin' });
+        apiService.setSession(res.token, res.user);
+        closeModal();
+        showToast('Admin clearance granted', 'success');
+        navigateTo('admin-dashboard');
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `Verify Administrative Clearance`;
+        }
+      }
+    }
+
+    async function handleCitizenRegister(event) {
+      event.preventDefault();
+      const name = document.getElementById('reg-c-name').value.trim();
+      const email = document.getElementById('reg-c-email').value.trim();
+      const phone = document.getElementById('reg-c-phone').value.trim();
+      const pass1 = document.getElementById('reg-c-pass').value;
+      const pass2 = document.getElementById('reg-c-pass2').value;
+      const btn = document.getElementById('reg-c-btn');
+
+      if (pass1 !== pass2) {
+        showToast('Passwords do not match', 'error');
+        return;
+      }
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Registering...`;
+        lucide.createIcons();
+      }
+
+      try {
+        const res = await apiService.register({
+          name,
+          email,
+          phone,
+          password: pass1,
+          role: 'citizen'
+        });
+
+        apiService.setSession(res.token, res.user);
+        closeModal();
+        showToast('Citizen Registration successful!', 'success');
+        navigateTo('categories');
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `Register Citizen Profile`;
+        }
+      }
+    }
+
+    async function handleUniversityRegister(event) {
+      event.preventDefault();
+      const name = document.getElementById('reg-u-name').value.trim();
+      const loc = document.getElementById('reg-u-loc').value.trim();
+      const email = document.getElementById('reg-u-email').value.trim();
+      const web = document.getElementById('reg-u-web').value.trim();
+      const phone = document.getElementById('reg-u-phone').value.trim();
+      const pass = document.getElementById('reg-u-pass').value;
+      const btn = document.getElementById('reg-u-btn');
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Registering...`;
+        lucide.createIcons();
+      }
+
+      try {
+        const res = await apiService.register({
+          name,
+          location: loc,
+          email,
+          website: web,
+          phone,
+          password: pass,
+          role: 'university'
+        });
+
+        apiService.setSession(res.token, res.user);
+        closeModal();
+        showToast('Academic Institution Registered!', 'success');
+        navigateTo('univ-dashboard');
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `Register Academic Institution`;
+        }
+      }
+    }
+
+    async function handleIndustryRegister(event) {
+      event.preventDefault();
+      const name = document.getElementById('reg-i-name').value.trim();
+      const sector = document.getElementById('reg-i-sector').value.trim();
+      const hq = document.getElementById('reg-i-hq').value.trim();
+      const email = document.getElementById('reg-i-email').value.trim();
+      const phone = document.getElementById('reg-i-phone').value.trim();
+      const pass = document.getElementById('reg-i-pass').value;
+      const btn = document.getElementById('reg-i-btn');
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Registering...`;
+        lucide.createIcons();
+      }
+
+      try {
+        const res = await apiService.register({
+          name,
+          sector,
+          headquarters: hq,
+          email,
+          phone,
+          password: pass,
+          role: 'industry'
+        });
+
+        apiService.setSession(res.token, res.user);
+        closeModal();
+        showToast('Corporate Partner Registered!', 'success');
+        navigateTo('industry-dashboard');
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `Register Corporate Partner`;
+        }
+      }
+    }
+
+    /* ==========================================================
+       9. CIVIC AI CHATBOT CONTROLS
+       ========================================================== */
+    function toggleChatbot() {
+      const chatWindow = document.getElementById('chatbot-window');
+      const toggleBtn = document.getElementById('chatbot-toggle-btn');
+      if (!chatWindow) return;
+
+      const isHidden = chatWindow.classList.contains('hidden');
+      if (isHidden) {
+        chatWindow.classList.remove('hidden');
+        toggleBtn.classList.add('hidden');
+        updateChatRolePill();
+        const input = document.getElementById('chat-input');
+        if (input) setTimeout(() => input.focus(), 150);
+      } else {
+        chatWindow.classList.add('hidden');
+        toggleBtn.classList.remove('hidden');
+      }
+      lucide.createIcons();
+    }
+
+    function updateChatRolePill() {
+      const pill = document.getElementById('chat-role-pill');
+      if (!pill) return;
+      if (!AppState.currentUser) {
+        pill.textContent = 'Guest Mode';
+        pill.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-500/20 text-slate-300 border border-slate-400/30';
+      } else {
+        const role = AppState.currentUser.role;
+        const roleStyles = {
+          citizen: 'bg-sky-500/20 text-sky-300 border-sky-400/30',
+          university: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30',
+          industry: 'bg-amber-500/20 text-amber-300 border-amber-400/30',
+          admin: 'bg-rose-500/20 text-rose-300 border-rose-400/30'
+        };
+        pill.textContent = `${role.charAt(0).toUpperCase() + role.slice(1)} Mode`;
+        pill.className = `text-[10px] font-bold px-2 py-0.5 rounded-full border ${roleStyles[role] || roleStyles.citizen}`;
+      }
+    }
+
+    function sendQuickPrompt(promptText) {
+      const input = document.getElementById('chat-input');
+      if (input) {
+        input.value = promptText;
+      }
+      handleChatSubmit();
+    }
+
+    function formatChatText(text) {
+      if (!text || typeof text !== 'string') return '';
+      return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`(.*?)`/g, '<code class="bg-slate-200 text-slate-800 px-1 py-0.5 rounded text-[11px] font-mono">$1</code>')
+        .replace(/\n/g, '<br/>');
+    }
+
+    function appendChatMessage(sender, text) {
+      const container = document.getElementById('chat-messages');
+      if (!container) return;
+
+      const msgDiv = document.createElement('div');
+      const isUser = sender === 'user';
+
+      if (isUser) {
+        msgDiv.className = 'flex items-start justify-end gap-2';
+        msgDiv.innerHTML = `
+          <div class="bg-sky-600 text-white p-3 rounded-2xl rounded-tr-sm max-w-[85%] leading-relaxed shadow-sm">
+            ${formatChatText(text)}
+          </div>
+          <div class="w-7 h-7 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center flex-shrink-0 mt-0.5 text-[11px] font-bold">
+            You
+          </div>
+        `;
+      } else {
+        msgDiv.className = 'flex items-start gap-2.5';
+        msgDiv.innerHTML = `
+          <div class="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
+            <i data-lucide="bot" class="w-4 h-4"></i>
+          </div>
+          <div class="bg-slate-100 p-3 rounded-2xl rounded-tl-sm text-slate-800 max-w-[85%] leading-relaxed shadow-sm">
+            ${formatChatText(text)}
+          </div>
+        `;
+      }
+
+      container.appendChild(msgDiv);
+      lucide.createIcons();
+      setTimeout(() => {
+        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+      }, 40);
+    }
+
+    async function handleChatSubmit(event) {
+      if (event) event.preventDefault();
+      const input = document.getElementById('chat-input');
+      if (!input) return;
+      const text = input.value.trim();
+      if (!text) return;
+
+      input.value = '';
+      appendChatMessage('user', text);
+
+      // Typing indicator
+      const container = document.getElementById('chat-messages');
+      const typingId = 'typing-' + Date.now();
+      const typingDiv = document.createElement('div');
+      typingDiv.id = typingId;
+      typingDiv.className = 'flex items-start gap-2.5';
+      typingDiv.innerHTML = `
+        <div class="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <i data-lucide="bot" class="w-4 h-4"></i>
+        </div>
+        <div class="bg-slate-100 p-3 rounded-2xl rounded-tl-sm text-slate-400 italic">
+          SolveBot is thinking...
+        </div>
+      `;
+      container.appendChild(typingDiv);
+      container.scrollTop = container.scrollHeight;
+      lucide.createIcons();
+
+      try {
+        const role = AppState.currentUser ? AppState.currentUser.role : 'citizen';
+        const context = {
+          currentView: AppState.currentView || 'view-landing',
+          userName: AppState.currentUser ? AppState.currentUser.name : '',
+          userEmail: AppState.currentUser ? AppState.currentUser.email : '',
+          activeTicket: AppState.activeProblem ? AppState.activeProblem.problemId : ''
+        };
+        const res = await apiService.chat(text, role, context);
+        const typingEl = document.getElementById(typingId);
+        if (typingEl) typingEl.remove();
+
+        const reply = res.data?.reply || "I'm here to help! Ask me anything about SocietySolve.";
+        appendChatMessage('bot', reply);
+      } catch (err) {
+        const typingEl = document.getElementById(typingId);
+        if (typingEl) typingEl.remove();
+        appendChatMessage('bot', "Sorry, I couldn't reach the server right now. Please ensure the backend is running.");
+      }
+    }
+
+    /* ==========================================================
+       10. APPLICATION INITIALIZATION & SESSION RESTORATION
+       ========================================================== */
+    window.onload = async function() {
+      // 1. Fetch live categories from backend
+      try {
+        const catRes = await apiService.getCategories();
+        if (catRes.data && catRes.data.length > 0) {
+          CATEGORIES = catRes.data;
+        }
+      } catch (e) {
+        // Fallback to local default CATEGORIES if server is loading
+      }
+
+      // 2. Check for active JWT session
+      const savedToken = apiService.getToken();
+      if (savedToken) {
+        try {
+          const meRes = await apiService.getMe();
+          if (meRes.success && meRes.user) {
+            AppState.currentUser = meRes.user;
+            showToast(`Welcome back, ${meRes.user.name}`, 'info');
+
+            // Navigate to user's home dashboard based on role
+            if (meRes.user.role === 'citizen') {
+              navigateTo('categories');
+            } else if (meRes.user.role === 'university') {
+              navigateTo('univ-dashboard');
+            } else if (meRes.user.role === 'industry') {
+              navigateTo('industry-dashboard');
+            } else if (meRes.user.role === 'admin') {
+              navigateTo('admin-dashboard');
+            } else {
+              navigateTo('portal-hub');
+            }
+            return;
+          }
+        } catch (e) {
+          console.warn('[Session] Stored session invalid or expired, resetting.');
+          apiService.clearSession();
+        }
+      }
+
+      // 3. Default to public portal hub if no active session
+      navigateTo('portal-hub');
+    };
+  </script>
+</body>
+</html>

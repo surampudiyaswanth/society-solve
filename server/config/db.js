@@ -4,7 +4,9 @@ let isConnected = false;
 let connectionError = null;
 
 export const connectDB = async () => {
-  const uri = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/societysolve';
+  let uri = (process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/societysolve').trim();
+  // Strip accidental wrapping quotes, angle brackets, or spaces from dashboard input
+  uri = uri.replace(/^["'<]+/, '').replace(/["'>]+$/, '').trim();
   
   try {
     const conn = await mongoose.connect(uri, {

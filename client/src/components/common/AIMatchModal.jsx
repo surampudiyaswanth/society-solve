@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, X, Building2, GraduationCap, Loader2, CheckCircle, ArrowRight } from 'lucide-react';
+import api from '../../services/api';
 
 export default function AIMatchModal({ isOpen, onClose, problemId, problemTitle }) {
   const [loading, setLoading] = useState(false);
@@ -14,14 +15,14 @@ export default function AIMatchModal({ isOpen, onClose, problemId, problemTitle 
     setError(null);
 
     try {
-      const res = await fetch(`http://localhost:5000/api/match/${problemId}`);
-      const data = await res.json();
+      const res = await api.get(`/match/${problemId}`);
+      const data = res.data;
 
-      if (data.success) {
+      if (data?.success) {
         setMatches(data.matches || []);
         setSearched(true);
       } else {
-        setError(data.message || 'Unable to retrieve AI matches.');
+        setError(data?.message || 'Unable to retrieve AI matches.');
       }
     } catch (err) {
       setError('Failed to connect to matching server.');

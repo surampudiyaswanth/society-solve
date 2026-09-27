@@ -1,12 +1,26 @@
 import axios from 'axios';
 
+// Resolve and normalize API and Backend URLs
+const rawUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').trim();
+export const API_BASE_URL = rawUrl.endsWith('/api') ? rawUrl : `${rawUrl.replace(/\/+$/, '')}/api`;
+export const BACKEND_URL = API_BASE_URL.replace(/\/api\/?$/, '');
+
+export const getAssetUrl = (assetPath) => {
+  if (!assetPath) return '';
+  if (assetPath.startsWith('http://') || assetPath.startsWith('https://') || assetPath.startsWith('blob:') || assetPath.startsWith('data:')) {
+    return assetPath;
+  }
+  const cleanPath = assetPath.startsWith('/') ? assetPath : `/${assetPath}`;
+  return `${BACKEND_URL}${cleanPath}`;
+};
+
 // Base API instance
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
+  timeout: 15000,
 });
 
 // Request interceptor to automatically attach JWT token

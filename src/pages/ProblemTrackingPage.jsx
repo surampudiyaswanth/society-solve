@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getProblemById } from '../services/problemService';
+import { getProblemById, updateProblemStatus } from '../services/problemService';
+import { getAssetUrl } from '../services/api';
 import ProblemStatusTimeline from '../components/common/ProblemStatusTimeline';
 import DiscussionThread from '../components/common/DiscussionThread';
 import ImpactReportModal from '../components/common/ImpactReportModal';
@@ -73,31 +74,16 @@ export default function ProblemTrackingPage() {
   const handleAdvanceStage = async (nextStatus, noteText, extraPayload = {}) => {
     setUpdatingStage(true);
     try {
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       const targetId = problem?.problemId || problem?._id || id;
-
-      const res = await fetch(`http://localhost:5000/api/problems/${targetId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: token ? `Bearer ${token}` : ''
-        },
-        body: JSON.stringify({
-          status: nextStatus,
-          note: noteText || `Stage transitioned to ${nextStatus}`,
-          ...extraPayload
-        })
+      await updateProblemStatus(targetId, {
+        status: nextStatus,
+        note: noteText || `Stage transitioned to ${nextStatus}`,
+        ...extraPayload
       });
-
-      const data = await res.json();
-      if (data.success) {
-        await fetchProblem();
-      } else {
-        alert(data.message || 'Failed to update problem milestone.');
-      }
+      await fetchProblem();
     } catch (err) {
       console.error('Error advancing stage:', err);
-      alert('Network error while updating status.');
+      alert(err.message || 'Failed to update problem milestone.');
     } finally {
       setUpdatingStage(false);
     }
@@ -432,13 +418,13 @@ export default function ProblemTrackingPage() {
                     {problem.images.map((img, idx) => (
                       <a
                         key={idx}
-                        href={img.startsWith('http') ? img : `http://localhost:5000${img}`}
+                        href={getAssetUrl(img)}
                         target="_blank"
                         rel="noreferrer"
                         className="group relative rounded-xl overflow-hidden border border-slate-800 bg-slate-950 aspect-video block"
                       >
                         <img
-                          src={img.startsWith('http') ? img : `http://localhost:5000${img}`}
+                          src={getAssetUrl(img)}
                           alt={`Evidence ${idx + 1}`}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                         />

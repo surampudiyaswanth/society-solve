@@ -9,7 +9,7 @@ services:
     runtime: node
     plan: free
     region: oregon
-    rootDir: societysolve/backend
+    rootDir: server
     buildCommand: npm install
     startCommand: node server.js
     healthCheckPath: /api/health
@@ -19,14 +19,18 @@ services:
         value: production
       - key: PORT
         value: 5000
-      - key: MONGODB_URI
+      - key: MONGO_URI
         sync: false # Set to your MongoDB Atlas connection string in Render Dashboard
+      - key: MONGODB_URI
+        sync: false
       - key: JWT_SECRET
         generateValue: true # Render automatically generates a secure random key
       - key: JWT_EXPIRES_IN
         value: 7d
       - key: CLIENT_URL
         value: "*"
+      - key: GEMINI_API_KEY
+        sync: false # Set to your Google Gemini API key
       - key: ADMIN_NAME
         value: "Chief Administrative Officer"
       - key: ADMIN_EMAIL

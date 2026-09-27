@@ -32,3 +32,10 @@ export const getProblemById = async (id) => {
   const res = await api.get(`/problems/${id}`);
   return res.data;
 };
+
+export const updateProblemStatus = async (id, statusData) => {
+  const res = await api.put(`/problems/${id}/status`, statusData);
+  return res.data;
+};
+
+export const updateProblemStage = updateProblemStatus;

@@ -10,16 +10,17 @@ import {
   CheckCircle, 
   Loader2,
   HelpCircle,
-  Navigation
+  Navigation,
+  FolderOpen
 } from 'lucide-react';
 
 const CATEGORIES = [
-  'Education',
-  'Healthcare',
-  'Agriculture',
   'Environment',
   'Infrastructure',
+  'Education',
+  'Healthcare',
   'Public Safety',
+  'Agriculture',
   'Governance & Services',
   'Economic Opportunity'
 ];
@@ -34,8 +35,8 @@ export default function ProblemSubmissionModal({
 }) {
   const [formData, setFormData] = useState({
     title: '',
-    category: 'Education',
-    problemType: 'General Community Need',
+    category: 'Environment',
+    problemType: 'Waste management',
     severity: 'Medium',
     description: '',
     location: '',
@@ -53,10 +54,10 @@ export default function ProblemSubmissionModal({
 
   useEffect(() => {
     if (initialData) {
-      const pType = initialData.problemType || 'General Community Need';
+      const pType = initialData.problemType || 'Waste management';
       setFormData({
         title: initialData.problemType ? `${initialData.problemType}` : '',
-        category: initialData.category || 'Education',
+        category: initialData.category || 'Environment',
         problemType: pType,
         severity: 'Medium',
         description: initialData.defaultDescription || '',
@@ -69,8 +70,8 @@ export default function ProblemSubmissionModal({
     } else {
       setFormData({
         title: '',
-        category: 'Education',
-        problemType: 'General Community Need',
+        category: 'Environment',
+        problemType: 'Waste management',
         severity: 'Medium',
         description: '',
         location: '',
@@ -115,7 +116,6 @@ export default function ProblemSubmissionModal({
         const { latitude, longitude } = position.coords;
 
         try {
-          // Free reverse geocoding via OpenStreetMap Nominatim
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
           );
@@ -238,83 +238,93 @@ export default function ProblemSubmissionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-700/80 rounded-3xl p-6 sm:p-8 text-white shadow-2xl my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm overflow-y-auto">
+      <div className="relative w-full max-w-2xl bg-white border border-slate-100 rounded-3xl p-7 sm:p-8 text-slate-800 shadow-[0_20px_50px_rgba(15,23,42,0.12)] my-8">
+        
+        {/* Close Icon Button */}
         <button
           onClick={handleResetAndClose}
-          className="absolute top-6 right-6 p-2 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+          className="absolute top-6 right-6 p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
         {submittedProblem ? (
           <div className="text-center py-8 space-y-4">
-            <div className="w-16 h-16 bg-teal-950/80 border border-teal-600 rounded-full flex items-center justify-center mx-auto text-teal-400">
+            <div className="w-16 h-16 bg-[#E6F7F8] border border-[#009FA6]/30 rounded-full flex items-center justify-center mx-auto text-[#009FA6]">
               <CheckCircle className="w-10 h-10" />
             </div>
-            <h3 className="text-2xl font-bold">Problem Registered!</h3>
-            <p className="text-sm text-slate-400 max-w-md mx-auto">
+            <h3 className="text-2xl font-bold text-slate-900">Problem Registered!</h3>
+            <p className="text-sm text-slate-500 max-w-md mx-auto">
               Your challenge has been logged into the community resolution engine.
             </p>
-            <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 inline-block">
-              <span className="text-xs text-slate-500 uppercase tracking-wider block font-semibold">
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 inline-block">
+              <span className="text-xs text-slate-400 uppercase tracking-wider block font-semibold">
                 Tracking ID
               </span>
-              <span className="font-mono text-xl text-teal-400 font-bold">
+              <span className="font-mono text-xl text-[#009FA6] font-bold">
                 {submittedProblem.problemId || 'SS-2026-CONFIRMED'}
               </span>
             </div>
             <div className="pt-4">
               <button
                 onClick={handleResetAndClose}
-                className="px-6 py-2.5 rounded-xl bg-teal-500 text-slate-950 font-bold hover:bg-teal-400 transition cursor-pointer"
+                className="px-6 py-2.5 rounded-xl bg-[#009FA6] text-white font-medium hover:bg-[#008389] shadow-sm transition cursor-pointer text-sm"
               >
                 Done
               </button>
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <h3 className="text-2xl font-black flex items-center gap-2">
-                <FileText className="w-6 h-6 text-teal-400" />
-                Report Community Challenge
-              </h3>
-              <p className="text-xs text-slate-400 mt-1">
-                Directly submit an issue to university innovators and industry teams.
-              </p>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            
+            {/* Header with rounded teal icon */}
+            <div className="flex items-start gap-3.5 pb-1">
+              <div className="w-10 h-10 rounded-2xl bg-[#E6F7F8] border border-[#009FA6]/20 flex items-center justify-center text-[#009FA6] shrink-0 mt-0.5">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-slate-900 tracking-tight">
+                  Report Community Challenge
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Directly submit an issue to university innovators and industry teams.
+                </p>
+              </div>
             </div>
 
             {error && (
-              <div className="p-3 bg-rose-950/60 border border-rose-800 rounded-xl text-xs text-rose-300 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-red-500" />
                 <span>{error}</span>
               </div>
             )}
 
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Title</label>
+            {/* Title */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700">Title</label>
               <input
                 required
                 type="text"
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
-                placeholder="Brief summary of the issue"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-teal-500 focus:outline-none text-sm"
+                placeholder="e.g. Waste management"
+                className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#009FA6]/20 focus:border-[#009FA6] transition"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                  <Tag className="w-3.5 h-3.5 text-teal-400" /> Category
+            {/* Category / Problem Type / Severity */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5 text-[#009FA6]" /> Category
                 </label>
                 <select
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-teal-500 focus:outline-none text-sm"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#009FA6]/20 focus:border-[#009FA6] transition"
                 >
                   {CATEGORIES.map((cat) => (
                     <option key={cat} value={cat}>
@@ -324,9 +334,9 @@ export default function ProblemSubmissionModal({
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                  <HelpCircle className="w-3.5 h-3.5 text-cyan-400" /> Problem Type
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                  <HelpCircle className="w-3.5 h-3.5 text-cyan-600" /> Problem Type
                 </label>
                 <input
                   required
@@ -334,20 +344,20 @@ export default function ProblemSubmissionModal({
                   name="problemType"
                   value={formData.problemType}
                   onChange={handleChange}
-                  placeholder="e.g., Digital Classrooms"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-teal-500 focus:outline-none text-sm"
+                  placeholder="e.g. Waste management"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#009FA6]/20 focus:border-[#009FA6] transition"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                  <AlertTriangle className="w-3.5 h-3.5 text-yellow-400" /> Severity
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500" /> Severity
                 </label>
                 <select
                   name="severity"
                   value={formData.severity}
                   onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-teal-500 focus:outline-none text-sm"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#009FA6]/20 focus:border-[#009FA6] transition"
                 >
                   {SEVERITIES.map((s) => (
                     <option key={s} value={s}>
@@ -358,28 +368,29 @@ export default function ProblemSubmissionModal({
               </div>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Detailed Description</label>
+            {/* Detailed Description */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700">Detailed Description</label>
               <textarea
                 required
                 rows={3}
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                placeholder="Explain the background, severity, and who is affected..."
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-teal-500 focus:outline-none text-sm"
+                placeholder="illegal open dumping, inadequate garbage collection routes, and lack of segregation..."
+                className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#009FA6]/20 focus:border-[#009FA6] transition resize-y"
               />
             </div>
 
-            {/* Geolocation Section */}
-            <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* Geolocation Section Banner */}
+            <div className="p-3.5 bg-[#E6F7F8]/50 border border-[#009FA6]/20 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="space-y-0.5">
-                <span className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                  <Navigation className="w-3.5 h-3.5 text-teal-400" /> Incident Geolocation
+                <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                  <Navigation className="w-3.5 h-3.5 text-[#009FA6]" /> Incident Geolocation
                 </span>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-slate-500">
                   {formData.latitude && formData.longitude ? (
-                    <span className="text-teal-400 font-mono">
+                    <span className="text-[#009FA6] font-mono font-medium">
                       GPS: {formData.latitude}, {formData.longitude}
                     </span>
                   ) : (
@@ -392,21 +403,21 @@ export default function ProblemSubmissionModal({
                 type="button"
                 onClick={handleDetectLocation}
                 disabled={locating}
-                className="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 rounded-xl bg-teal-950 hover:bg-teal-900 text-teal-300 border border-teal-800 text-xs font-semibold cursor-pointer transition-all disabled:opacity-50 shrink-0"
+                className="inline-flex items-center justify-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-white text-[#009FA6] border border-[#009FA6]/40 hover:bg-[#009FA6] hover:text-white text-xs font-semibold cursor-pointer shadow-2xs transition-all disabled:opacity-50 shrink-0"
               >
                 {locating ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-teal-400" />
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#009FA6]" />
                     <span>Detecting GPS...</span>
                   </>
                 ) : locationSuccess ? (
                   <>
-                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
                     <span>GPS Acquired</span>
                   </>
                 ) : (
                   <>
-                    <MapPin className="w-3.5 h-3.5 text-teal-400" />
+                    <MapPin className="w-3.5 h-3.5" />
                     <span>Auto-Detect Location</span>
                   </>
                 )}
@@ -415,9 +426,9 @@ export default function ProblemSubmissionModal({
 
             {/* Location Fields */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300 flex items-center gap-1">
-                  <MapPin className="w-3 h-3 text-teal-400" /> Landmark / Area
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-[#009FA6]" /> Landmark / Area
                 </label>
                 <input
                   required
@@ -426,12 +437,12 @@ export default function ProblemSubmissionModal({
                   value={formData.location}
                   onChange={handleChange}
                   placeholder="e.g., Ward 12 Main St"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm focus:border-teal-500 focus:outline-none"
+                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#009FA6]/20 focus:border-[#009FA6] transition"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">City</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700">City</label>
                 <input
                   required
                   type="text"
@@ -439,12 +450,12 @@ export default function ProblemSubmissionModal({
                   value={formData.city}
                   onChange={handleChange}
                   placeholder="e.g., Visakhapatnam"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm focus:border-teal-500 focus:outline-none"
+                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#009FA6]/20 focus:border-[#009FA6] transition"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">State</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700">State</label>
                 <input
                   required
                   type="text"
@@ -452,36 +463,47 @@ export default function ProblemSubmissionModal({
                   value={formData.state}
                   onChange={handleChange}
                   placeholder="e.g., Andhra Pradesh"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm focus:border-teal-500 focus:outline-none"
+                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#009FA6]/20 focus:border-[#009FA6] transition"
                 />
               </div>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300 flex items-center gap-1">
-                <Upload className="w-3.5 h-3.5 text-teal-400" /> Evidence Photos (Optional)
+            {/* Evidence Photos */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+                <Upload className="w-3.5 h-3.5 text-[#009FA6]" /> Evidence Photos (Optional)
               </label>
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handleFileChange}
-                className="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-teal-400 hover:file:bg-slate-700"
-              />
+              <div className="flex items-center gap-3">
+                <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-medium cursor-pointer transition">
+                  <FolderOpen className="w-3.5 h-3.5 text-[#009FA6]" />
+                  <span>Choose Files</span>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </label>
+                <span className="text-xs text-slate-400">
+                  {images.length > 0 ? `${images.length} file(s) selected` : 'No file chosen'}
+                </span>
+              </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+            {/* Modal Actions */}
+            <div className="flex justify-end items-center gap-3 pt-4 border-t border-slate-100">
               <button
                 type="button"
                 onClick={handleResetAndClose}
-                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition cursor-pointer"
+                className="px-5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-semibold transition cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-950 font-bold text-xs shadow-lg transition flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                className="px-6 py-2.5 rounded-xl bg-[#009FA6] hover:bg-[#008389] text-white font-semibold text-xs shadow-sm transition flex items-center gap-2 disabled:opacity-50 cursor-pointer"
               >
                 {submitting ? (
                   <>

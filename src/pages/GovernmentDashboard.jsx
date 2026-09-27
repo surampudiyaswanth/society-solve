@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 import { 
   Building2, 
   MapPin, 
@@ -21,9 +22,8 @@ export default function GovernmentDashboard() {
   const fetchProblems = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:5000/api/problems');
-      const data = await res.json();
-      setProblems(data.problems || []);
+      const res = await api.get('/problems');
+      setProblems(res.data?.problems || []);
     } catch (err) {
       console.error('Error loading problems:', err);
     } finally {
@@ -37,20 +37,11 @@ export default function GovernmentDashboard() {
 
   const handleUpdateStatus = async (problemId, status, note) => {
     try {
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/problems/${problemId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: token ? `Bearer ${token}` : ''
-        },
-        body: JSON.stringify({ status, note })
-      });
-      const data = await res.json();
-      if (data.success) {
+      const res = await api.put(`/problems/${problemId}/status`, { status, note });
+      if (res.data?.success) {
         fetchProblems();
       } else {
-        alert(data.message || 'Status transition failed');
+        alert(res.data?.message || 'Status transition failed');
       }
     } catch (err) {
       console.error('Status update failed:', err);

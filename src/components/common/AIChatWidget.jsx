@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Bot, X, Send, Sparkles, Loader2 } from 'lucide-react';
+import api from '../../services/api';
 
 export default function AIChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -37,25 +38,20 @@ export default function AIChatWidget() {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMessage }),
-      });
-
-      const data = await res.json();
-      if (data.success) {
+      const res = await api.post('/chat', { message: userMessage });
+      const data = res.data;
+      if (data?.success) {
         setMessages((prev) => [...prev, { sender: 'bot', text: data.reply || data.data?.reply }]);
       } else {
         setMessages((prev) => [
           ...prev,
-          { sender: 'bot', text: data.message || 'Sorry, I ran into an issue answering that.' }
+          { sender: 'bot', text: data?.message || 'Sorry, I ran into an issue answering that.' }
         ]);
       }
     } catch (err) {
       setMessages((prev) => [
         ...prev,
-        { sender: 'bot', text: 'Network connection failed. Ensure the server is running on port 5000.' }
+        { sender: 'bot', text: 'Network connection failed. Ensure the server is reachable.' }
       ]);
     } finally {
       setLoading(false);

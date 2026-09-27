@@ -4,7 +4,7 @@ let isConnected = false;
 let connectionError = null;
 
 export const connectDB = async () => {
-  const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/societysolve';
+  const uri = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/societysolve';
   
   try {
     const conn = await mongoose.connect(uri, {

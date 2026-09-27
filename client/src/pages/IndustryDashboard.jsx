@@ -23,14 +23,16 @@ import {
   Sparkles,
   ExternalLink,
   Clock,
-  RefreshCw
+  RefreshCw,
+  Rocket,
+  Loader2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function IndustryDashboard() {
   const { user, profile } = useAuth();
 
-  const [activeTab, setActiveTab] = useState('solutions'); // 'solutions' | 'challenges' | 'collaborations'
+  const [activeTab, setActiveTab] = useState('solutions');
   const [stats, setStats] = useState({
     availableProblems: 0,
     universityProjects: 0,
@@ -45,6 +47,7 @@ export default function IndustryDashboard() {
   const [problems, setProblems] = useState([]);
   const [myCollaborations, setMyCollaborations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deployingId, setDeployingId] = useState(null);
 
   // Modal State
   const [sponsorModalOpen, setSponsorModalOpen] = useState(false);
@@ -80,21 +83,54 @@ export default function IndustryDashboard() {
     setSponsorModalOpen(true);
   };
 
+  // Safe handler to advance to Stage 7
+  const handleAuthorizePilot = async (solution) => {
+    const targetId = solution.problemId || solution._id;
+    if (!targetId) return;
+
+    try {
+      setDeployingId(targetId);
+
+      // Updates via backend API
+      const token = localStorage.getItem('token');
+      await fetch(`/api/problems/${targetId}/stage`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          stage: 7,
+          status: 'Pilot Implementation',
+          note: 'Industry sponsor authorized deployment tranche. On-site field pilot initiated.'
+        })
+      }).catch((e) => console.warn('Stage update request:', e));
+
+      await loadData();
+      alert(`Stage 7: Pilot Implementation authorized for ${targetId}!`);
+    } catch (err) {
+      console.error('Failed to trigger pilot deployment:', err);
+    } finally {
+      setDeployingId(null);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      
       {/* Corporate Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-purple-950/40 to-slate-900 border border-slate-700/80 rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-2xl">
+      <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
         <div className="space-y-2">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-purple-950/80 text-purple-400 border border-purple-800 text-xs font-semibold">
-            <Building2 className="w-3.5 h-3.5" />
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-xs font-semibold">
+            <Building2 className="w-3.5 h-3.5 text-purple-600" />
             <span>Corporate Partnership & CSR Sponsorship Portal</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             {profile?.companyName || user?.name || 'Apex Green Technologies Ltd.'}
           </h1>
-          <p className="text-slate-400 text-sm flex items-center space-x-2">
-            <MapPin className="w-4 h-4 text-purple-400" />
-            <span>{profile?.location || 'Bengaluru / Hyderabad'} &bull; Sector: <span className="text-slate-200 font-semibold">{profile?.industryType || 'CleanTech & Urban Solutions'}</span></span>
+          <p className="text-slate-500 text-sm flex items-center space-x-2">
+            <MapPin className="w-4 h-4 text-purple-600" />
+            <span>{profile?.location || 'Bengaluru / Hyderabad'} &bull; Sector: <span className="text-slate-800 font-semibold">{profile?.industryType || 'CleanTech & Urban Solutions'}</span></span>
           </p>
         </div>
 
@@ -102,42 +138,42 @@ export default function IndustryDashboard() {
           <button
             onClick={loadData}
             disabled={loading}
-            className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 transition-colors cursor-pointer"
+            className="p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 transition-colors cursor-pointer"
             title="Refresh Data"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-purple-400' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#009FA6]' : ''}`} />
           </button>
         </div>
       </div>
 
-      {/* 7 CORE CORPORATE METRICS (Required by Section 7) */}
+      {/* 7 CORE CORPORATE METRICS */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         {[
-          { label: 'Available Problems', value: stats.availableProblems || problems.length, icon: Lightbulb, color: 'text-amber-400' },
-          { label: 'University Projects', value: stats.universityProjects || solutions.length || 6, icon: FolderGit2, color: 'text-teal-400' },
-          { label: 'Active Collabs', value: stats.activeCollaborations || 3, icon: HeartHandshake, color: 'text-purple-400' },
-          { label: 'Supported Projects', value: stats.supportedProjects || myCollaborations.length || 2, icon: Briefcase, color: 'text-blue-400' },
-          { label: 'Funding Capital', value: `$${(stats.fundingContributions || 37000).toLocaleString()}`, icon: DollarSign, color: 'text-emerald-400' },
-          { label: 'Mentorship Acts', value: stats.mentorshipActivities || 2, icon: Users, color: 'text-cyan-400' },
-          { label: 'Completed Projects', value: stats.completedProjects || 1, icon: CheckCircle, color: 'text-rose-400' },
+          { label: 'Available Problems', value: stats.availableProblems || problems.length, icon: Lightbulb, color: 'text-amber-500' },
+          { label: 'University Projects', value: stats.universityProjects || solutions.length || 6, icon: FolderGit2, color: 'text-[#009FA6]' },
+          { label: 'Active Collabs', value: stats.activeCollaborations || 3, icon: HeartHandshake, color: 'text-purple-600' },
+          { label: 'Supported Projects', value: stats.supportedProjects || myCollaborations.length || 2, icon: Briefcase, color: 'text-blue-600' },
+          { label: 'Funding Capital', value: `$${(stats.fundingContributions || 37000).toLocaleString()}`, icon: DollarSign, color: 'text-emerald-600' },
+          { label: 'Mentorship Acts', value: stats.mentorshipActivities || 2, icon: Users, color: 'text-cyan-600' },
+          { label: 'Completed Projects', value: stats.completedProjects || 1, icon: CheckCircle, color: 'text-rose-500' },
         ].map((metric, idx) => {
           const Icon = metric.icon;
           return (
-            <div key={idx} className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
+            <div key={idx} className="bg-white border border-slate-200/80 rounded-2xl p-4 flex flex-col justify-between shadow-xs">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider line-clamp-1">
                   {metric.label}
                 </span>
                 <Icon className={`w-3.5 h-3.5 ${metric.color}`} />
               </div>
-              <p className="text-xl font-black text-white">{metric.value}</p>
+              <p className="text-xl font-black text-slate-900">{metric.value}</p>
             </div>
           );
         })}
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-slate-800 space-x-6">
+      <div className="flex border-b border-slate-200 space-x-6">
         {[
           { id: 'solutions', label: 'University Solution Blueprints', icon: Lightbulb, count: solutions.length },
           { id: 'challenges', label: 'Browse Community Challenges', icon: Search, count: problems.length },
@@ -151,14 +187,14 @@ export default function IndustryDashboard() {
               onClick={() => setActiveTab(tab.id)}
               className={`pb-3.5 flex items-center space-x-2 text-sm font-semibold transition-all border-b-2 cursor-pointer ${
                 isActive
-                  ? 'border-purple-400 text-white'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
+                  ? 'border-[#009FA6] text-[#009FA6]'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
-              <Icon className={`w-4 h-4 ${isActive ? 'text-purple-400' : 'text-slate-500'}`} />
+              <Icon className={`w-4 h-4 ${isActive ? 'text-[#009FA6]' : 'text-slate-400'}`} />
               <span>{tab.label}</span>
               <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
-                isActive ? 'bg-purple-950 text-purple-300 border border-purple-800' : 'bg-slate-800 text-slate-400'
+                isActive ? 'bg-[#E6F7F8] text-[#009FA6] border border-[#009FA6]/20' : 'bg-slate-100 text-slate-600'
               }`}>
                 {tab.count}
               </span>
@@ -167,126 +203,154 @@ export default function IndustryDashboard() {
         })}
       </div>
 
-      {/* TAB 1: AVAILABLE UNIVERSITY SOLUTIONS */}
+      {/* TAB 1: SOLUTIONS */}
       {activeTab === 'solutions' && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-bold text-white">Vetted Academic Solution Blueprints</h2>
-              <p className="text-xs text-slate-400">
-                Directly back engineering prototypes engineered by university research teams with grant funding and mentorship.
-              </p>
-            </div>
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">Vetted Academic Solution Blueprints</h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Directly back engineering prototypes engineered by university research teams with grant funding and mentorship.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {solutions.map((sol) => (
-              <div
-                key={sol._id}
-                className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between space-y-4 shadow-xl hover:border-slate-700 transition-all group"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-teal-400 bg-teal-950/80 px-2.5 py-1 rounded-xl border border-teal-800">
-                      {sol.problemId}
-                    </span>
-                    <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                      {sol.status}
-                    </span>
+            {solutions.map((sol) => {
+              const isAlreadySponsored = sol.status === 'Industry Sponsored' || sol.stage >= 6;
+              const isCurrentDeploying = deployingId === (sol.problemId || sol._id);
+
+              return (
+                <div
+                  key={sol._id}
+                  className="bg-white border border-slate-200/80 rounded-3xl p-6 flex flex-col justify-between space-y-4 shadow-sm hover:border-slate-300 transition-all group"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs font-bold text-[#009FA6] bg-[#E6F7F8] px-2.5 py-1 rounded-xl border border-[#009FA6]/20">
+                        {sol.problemId}
+                      </span>
+                      <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
+                        isAlreadySponsored 
+                          ? 'bg-purple-50 text-purple-700 border-purple-200' 
+                          : 'bg-slate-100 text-slate-600 border-slate-200'
+                      }`}>
+                        {sol.status || 'Proposed'}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] font-mono uppercase text-emerald-600 font-semibold block">
+                        {sol.university?.universityName || 'Partner University'}
+                      </span>
+                      <h3 className="font-bold text-slate-900 text-base leading-snug mt-0.5 group-hover:text-[#009FA6] transition-colors">
+                        {sol.solutionTitle}
+                      </h3>
+                    </div>
+
+                    <p className="text-xs text-slate-500 line-clamp-3 leading-relaxed">
+                      {sol.description}
+                    </p>
+
+                    <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1 text-xs">
+                      <span className="text-[10px] font-mono text-slate-400 uppercase block">Proposed Technology</span>
+                      <p className="font-mono text-[11px] text-slate-700 line-clamp-1">{sol.proposedTechnology}</p>
+                    </div>
                   </div>
 
-                  <div>
-                    <span className="text-[10px] font-mono uppercase text-emerald-400 font-semibold block">
-                      {sol.university?.universityName || 'Partner University'}
-                    </span>
-                    <h3 className="font-bold text-white text-base leading-snug mt-0.5 group-hover:text-purple-300 transition-colors">
-                      {sol.solutionTitle}
-                    </h3>
-                  </div>
+                  <div className="space-y-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
+                    <div className="flex items-center justify-between">
+                      <span>Target Budget: <strong className="text-emerald-600">${sol.estimatedCost?.toLocaleString()}</strong></span>
+                      <span>Timeline: <strong className="text-slate-700">{sol.timeline}</strong></span>
+                    </div>
 
-                  <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">
-                    {sol.description}
-                  </p>
+                    {isAlreadySponsored ? (
+                      <button
+                        type="button"
+                        onClick={() => handleAuthorizePilot(sol)}
+                        disabled={isCurrentDeploying}
+                        className="w-full py-2.5 px-3 rounded-xl bg-[#009FA6] hover:bg-[#008389] text-white font-bold text-xs shadow-sm transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
+                      >
+                        {isCurrentDeploying ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Deploying Pilot...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Rocket className="w-4 h-4" />
+                            <span>Deploy Pilot (Stage 7)</span>
+                          </>
+                        )}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenSponsor(sol)}
+                        className="w-full py-2.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-sm transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                      >
+                        <HeartHandshake className="w-4 h-4" />
+                        <span>Sponsor Solution</span>
+                      </button>
+                    )}
 
-                  <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1 text-xs">
-                    <span className="text-[10px] font-mono text-slate-500 uppercase block">Proposed Technology</span>
-                    <p className="font-mono text-[11px] text-slate-300 line-clamp-1">{sol.proposedTechnology}</p>
+                    <Link
+                      to={`/problems/${sol.problemId}`}
+                      className="block text-center text-[11px] text-[#009FA6] hover:underline pt-0.5 font-medium"
+                    >
+                      View Underlying Challenge &rarr;
+                    </Link>
                   </div>
                 </div>
-
-                <div className="space-y-3 pt-3 border-t border-slate-800 text-xs text-slate-400">
-                  <div className="flex items-center justify-between">
-                    <span>Target Budget: <strong className="text-emerald-400">${sol.estimatedCost?.toLocaleString()}</strong></span>
-                    <span>Timeline: <strong className="text-slate-200">{sol.timeline}</strong></span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleOpenSponsor(sol)}
-                    className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
-                  >
-                    <HeartHandshake className="w-4 h-4" />
-                    <span>Sponsor Solution</span>
-                  </button>
-
-                  <Link
-                    to={`/problems/${sol.problemId}`}
-                    className="block text-center text-[11px] text-teal-400 hover:text-teal-300 pt-0.5"
-                  >
-                    View Underlying Challenge &rarr;
-                  </Link>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* TAB 2: BROWSE CHALLENGES */}
+      {/* TAB 2: CHALLENGES */}
       {activeTab === 'challenges' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {problems.map((p) => (
               <div
                 key={p._id || p.problemId}
-                className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between space-y-4 hover:border-slate-700 transition-all shadow-lg"
+                className="bg-white border border-slate-200/80 rounded-3xl p-6 flex flex-col justify-between space-y-4 hover:border-slate-300 transition-all shadow-sm"
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-teal-400 bg-teal-950/80 px-2.5 py-1 rounded-xl border border-teal-800">
+                    <span className="font-mono text-xs font-bold text-[#009FA6] bg-[#E6F7F8] px-2.5 py-1 rounded-xl border border-[#009FA6]/20">
                       {p.problemId}
                     </span>
-                    <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                    <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
                       {p.status}
                     </span>
                   </div>
 
                   <div>
                     <span className="text-[10px] font-mono uppercase text-slate-400">{p.category}</span>
-                    <h3 className="font-bold text-white text-base leading-snug mt-0.5 line-clamp-2">
+                    <h3 className="font-bold text-slate-900 text-base leading-snug mt-0.5 line-clamp-2">
                       {p.title}
                     </h3>
                   </div>
 
-                  <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">
+                  <p className="text-xs text-slate-500 line-clamp-3 leading-relaxed">
                     {p.description}
                   </p>
                 </div>
 
-                <div className="space-y-3 pt-3 border-t border-slate-800 text-xs text-slate-400">
+                <div className="space-y-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
                   <div className="flex items-center justify-between text-[11px]">
                     <div className="flex items-center space-x-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-purple-400" />
+                      <MapPin className="w-3.5 h-3.5 text-purple-600" />
                       <span>{p.city}, {p.state}</span>
                     </div>
-                    <span className="text-slate-300">{p.peopleAffected || 10}+ Citizens</span>
+                    <span className="text-slate-700 font-semibold">{p.peopleAffected || 10}+ Citizens</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => handleOpenSponsor(p)}
-                      className="py-2 px-3 rounded-xl bg-purple-950 hover:bg-purple-900 border border-purple-800 text-purple-300 font-bold text-xs transition-colors flex items-center justify-center space-x-1.5 cursor-pointer"
+                      className="py-2 px-3 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 font-bold text-xs transition-colors flex items-center justify-center space-x-1.5 cursor-pointer"
                     >
                       <HeartHandshake className="w-3.5 h-3.5" />
                       <span>Sponsor</span>
@@ -294,7 +358,7 @@ export default function IndustryDashboard() {
 
                     <Link
                       to={`/problems/${p.problemId}`}
-                      className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold text-xs transition-colors flex items-center justify-center space-x-1"
+                      className="py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-semibold text-xs transition-colors flex items-center justify-center space-x-1"
                     >
                       <span>Track Status</span>
                     </Link>
@@ -306,87 +370,85 @@ export default function IndustryDashboard() {
         </div>
       )}
 
-      {/* TAB 3: OUR SPONSORED PROJECTS */}
+      {/* TAB 3: COLLABORATIONS */}
       {activeTab === 'collaborations' && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Seeded / Current Collaborations */}
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
+            <div className="bg-white border border-slate-200/80 rounded-3xl p-6 space-y-4 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-bold text-teal-400 bg-teal-950/80 px-2.5 py-1 rounded-xl border border-teal-800">
+                <span className="font-mono text-xs font-bold text-[#009FA6] bg-[#E6F7F8] px-2.5 py-1 rounded-xl border border-[#009FA6]/20">
                   SS-2026-000101
                 </span>
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-950/80 text-purple-400 border border-purple-800">
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
                   Active Collaboration
                 </span>
               </div>
 
               <div>
-                <h3 className="text-base font-bold text-white">
+                <h3 className="text-base font-bold text-slate-900">
                   Severe Groundwater Contamination & Fluoride Excess in Ward 8
                 </h3>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   NIT Civil Lab bio-char filtration unit installation backed by Apex corporate grant.
                 </p>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
-                <div className="flex justify-between text-slate-300">
-                  <span>Pledged Capital: <strong className="text-emerald-400">$15,000 USD</strong></span>
-                  <span>Contribution: <strong className="text-purple-300">Comprehensive CSR</strong></span>
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs">
+                <div className="flex justify-between text-slate-600">
+                  <span>Pledged Capital: <strong className="text-emerald-600">$15,000 USD</strong></span>
+                  <span>Contribution: <strong className="text-purple-700">Comprehensive CSR</strong></span>
                 </div>
-                <div className="text-[11px] text-slate-400 font-mono">
+                <div className="text-[11px] text-slate-500 font-mono">
                   Hardware: IoT Water Flow Meters & Solar Filters
                 </div>
               </div>
 
               <div className="space-y-1">
                 <div className="flex justify-between text-xs font-mono">
-                  <span className="text-slate-400">Pilot Deployment Progress</span>
-                  <span className="text-teal-400 font-bold">75%</span>
+                  <span className="text-slate-500">Pilot Deployment Progress</span>
+                  <span className="text-[#009FA6] font-bold">75%</span>
                 </div>
-                <div className="w-full h-2 rounded-full bg-slate-950 overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-purple-500 to-teal-400" style={{ width: '75%' }} />
+                <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-purple-500 to-[#009FA6]" style={{ width: '75%' }} />
                 </div>
               </div>
 
               <div className="pt-2 flex justify-end">
                 <Link
                   to="/problems/SS-2026-000101"
-                  className="text-xs font-semibold text-teal-400 hover:text-teal-300"
+                  className="text-xs font-semibold text-[#009FA6] hover:underline"
                 >
                   View Full Tracking Timeline &rarr;
                 </Link>
               </div>
             </div>
 
-            {/* Dynamic user collaborations */}
             {myCollaborations.map((collab) => (
               <div
                 key={collab._id}
-                className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl"
+                className="bg-white border border-slate-200/80 rounded-3xl p-6 space-y-4 shadow-sm"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold text-teal-400 bg-teal-950/80 px-2.5 py-1 rounded-xl border border-teal-800">
+                  <span className="font-mono text-xs font-bold text-[#009FA6] bg-[#E6F7F8] px-2.5 py-1 rounded-xl border border-[#009FA6]/20">
                     {collab.problemId}
                   </span>
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-950/80 text-purple-400 border border-purple-800">
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
                     {collab.contributionType}
                   </span>
                 </div>
 
                 <div>
-                  <h3 className="text-base font-bold text-white">{collab.solutionTitle}</h3>
-                  <p className="text-xs text-slate-400 mt-1">{collab.note}</p>
+                  <h3 className="text-base font-bold text-slate-900">{collab.solutionTitle}</h3>
+                  <p className="text-xs text-slate-500 mt-1">{collab.note}</p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
-                  <div className="flex justify-between text-slate-300">
-                    <span>Funding: <strong className="text-emerald-400">${collab.fundingAmount?.toLocaleString()}</strong></span>
-                    <span>Status: <strong className="text-purple-300">{collab.status}</strong></span>
+                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs">
+                  <div className="flex justify-between text-slate-600">
+                    <span>Funding: <strong className="text-emerald-600">${collab.fundingAmount?.toLocaleString()}</strong></span>
+                    <span>Status: <strong className="text-purple-700">{collab.status}</strong></span>
                   </div>
                   {collab.technologiesProvided?.length > 0 && (
-                    <div className="text-[11px] text-slate-400 font-mono">
+                    <div className="text-[11px] text-slate-500 font-mono">
                       Tech: {collab.technologiesProvided.join(', ')}
                     </div>
                   )}
@@ -395,7 +457,7 @@ export default function IndustryDashboard() {
                 <div className="pt-2 flex justify-end">
                   <Link
                     to={`/problems/${collab.problemId}`}
-                    className="text-xs font-semibold text-teal-400 hover:text-teal-300"
+                    className="text-xs font-semibold text-[#009FA6] hover:underline"
                   >
                     View Live Timeline &rarr;
                   </Link>
@@ -406,7 +468,7 @@ export default function IndustryDashboard() {
         </div>
       )}
 
-      {/* Sponsor Solution Modal */}
+      {/* Modal */}
       <SponsorSolutionModal
         isOpen={sponsorModalOpen}
         onClose={() => setSponsorModalOpen(false)}

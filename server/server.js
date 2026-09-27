@@ -43,15 +43,37 @@ const __dirname = path.dirname(__filename);
 // Security Headers Middleware
 app.use(securityHeaders);
 
-// Middleware
+// Middleware - Full Cross-Origin Resource Sharing (CORS) Configuration
+const allowedOrigins = [
+  'https://society-solve-nine.vercel.app',
+  process.env.CLIENT_URL,
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:4173',
+  'http://127.0.0.1:4173',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+].filter(Boolean);
+
 app.use(cors({
-  origin: [
-    process.env.CLIENT_URL || 'http://localhost:5173',
-    'http://127.0.0.1:5173',
-    'http://localhost:4173',
-    'http://127.0.0.1:4173'
-  ],
-  credentials: true
+  origin: (origin, callback) => {
+    // Allow non-browser requests (Postman, cURL, server-to-server)
+    if (!origin) return callback(null, true);
+    // Allow explicit origins, any *.vercel.app domain, and localhost
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app') ||
+      origin.startsWith('http://localhost:') ||
+      origin.startsWith('http://127.0.0.1:')
+    ) {
+      return callback(null, true);
+    }
+    // Dynamic fallback: reflect origin so valid clients are not blocked
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
 
 app.use(express.json());

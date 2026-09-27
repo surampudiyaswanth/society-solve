@@ -1,7 +1,15 @@
 import axios from 'axios';
 
 // Resolve and normalize API and Backend URLs
-const rawUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').trim();
+// Automatically falls back to the production Render backend when deployed
+const getProductionDefault = () => {
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return 'https://society-solve.onrender.com/api';
+  }
+  return 'http://localhost:5000/api';
+};
+
+const rawUrl = (import.meta.env.VITE_API_URL || getProductionDefault()).trim();
 export const API_BASE_URL = rawUrl.endsWith('/api') ? rawUrl : `${rawUrl.replace(/\/+$/, '')}/api`;
 export const BACKEND_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 

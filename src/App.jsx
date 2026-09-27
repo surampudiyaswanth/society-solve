@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/common/Navbar';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import AIChatWidget from './components/common/AIChatWidget';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Pages
 import LandingPage from './pages/LandingPage';
@@ -20,14 +21,15 @@ import SolutionsPage from './pages/SolutionsPage';
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-teal-500 selection:text-white font-['Plus_Jakarta_Sans',sans-serif]">
-          {/* Global Navbar */}
-          <Navbar />
+    <ErrorBoundary>
+      <AuthProvider>
+        <Router>
+          <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-teal-500 selection:text-white font-['Plus_Jakarta_Sans',sans-serif]">
+            {/* Global Navbar */}
+            <Navbar />
 
-          {/* Main Route Content */}
-          <main className="flex-1">
+            {/* Main Route Content */}
+            <main className="flex-1">
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<LandingPage />} />
@@ -114,5 +116,6 @@ export default function App() {
         </div>
       </Router>
     </AuthProvider>
+  </ErrorBoundary>
   );
 }

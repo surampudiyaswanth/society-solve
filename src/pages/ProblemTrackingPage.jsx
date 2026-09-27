@@ -163,47 +163,48 @@ export default function ProblemTrackingPage() {
       </div>
 
       {/* Hero Header Card */}
-      <div className="bg-slate-900/90 border-2 border-slate-700 rounded-3xl p-6 sm:p-8 space-y-6 shadow-md relative overflow-hidden">
+      <div className="bg-white border-2 border-slate-700 rounded-3xl p-6 sm:p-8 space-y-6 shadow-md relative overflow-hidden font-sans">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center space-x-2.5">
-            <span className="text-xs font-mono font-black text-teal-400 bg-teal-950/90 px-3 py-1 rounded-xl border border-teal-800/80 tracking-wider">
+            <span className="text-xs font-sans font-black text-teal-800 bg-teal-100 px-3 py-1 rounded-xl border border-teal-400 tracking-wider">
               {problem.problemId}
             </span>
-            <span className="text-xs font-semibold px-3 py-1 rounded-xl bg-slate-800 text-slate-300 border border-slate-700">
+            <span className="text-xs font-sans font-bold px-3 py-1 rounded-xl bg-slate-100 text-slate-800 border border-slate-300">
               {problem.category}
             </span>
-            <span className={`text-xs font-semibold px-3 py-1 rounded-xl border ${getSeverityBadge(problem.severity)}`}>
+            <span className={`text-xs font-sans font-bold px-3 py-1 rounded-xl border ${getSeverityBadge(problem.severity)}`}>
               {problem.severity} Severity
             </span>
           </div>
 
-          <div className="text-xs font-mono text-slate-400 flex items-center space-x-1.5">
-            <Calendar className="w-3.5 h-3.5" />
+          <div className="text-xs font-sans font-bold text-slate-700 flex items-center space-x-1.5">
+            <Calendar className="w-4 h-4 text-slate-500" />
             <span>Logged: {new Date(problem.createdAt).toLocaleDateString()}</span>
           </div>
         </div>
 
         <div>
-          <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight font-sans">
             {problem.title}
           </h1>
-          <p className="text-xs sm:text-sm text-teal-400/90 font-mono mt-1">
-            Focus Problem Type: {problem.problemType}
+          <p className="text-sm font-bold text-[#008389] font-sans mt-1.5 flex items-center gap-1.5">
+            <span className="text-slate-500 font-semibold text-xs uppercase tracking-wide">Focus Problem Type:</span>
+            <span>{problem.problemType}</span>
           </p>
         </div>
 
         {/* Location & Impact Chips */}
-        <div className="flex flex-wrap items-center gap-4 text-xs text-slate-300 pt-2 border-t border-slate-800">
+        <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-slate-700 pt-3 border-t-2 border-slate-200 font-sans">
           <div className="flex items-center space-x-1.5">
-            <MapPin className="w-4 h-4 text-teal-400" />
+            <MapPin className="w-4 h-4 text-[#009FA6]" />
             <span>{problem.location}, {problem.city}, {problem.state} {problem.postalCode ? `(${problem.postalCode})` : ''}</span>
           </div>
           <div className="flex items-center space-x-1.5">
-            <Users className="w-4 h-4 text-cyan-400" />
+            <Users className="w-4 h-4 text-blue-600" />
             <span>{problem.peopleAffected?.toLocaleString() || 10}+ Citizens Affected</span>
           </div>
           <div className="flex items-center space-x-1.5">
-            <Calendar className="w-4 h-4 text-amber-400" />
+            <Calendar className="w-4 h-4 text-amber-600" />
             <span>Observed: {new Date(problem.dateObserved).toLocaleDateString()}</span>
           </div>
         </div>

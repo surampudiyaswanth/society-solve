@@ -63,14 +63,29 @@ input::placeholder, textarea::placeholder {
   color: #94A3B8 !important;
 }
 
-/* Standardize headings from inverted white to dark slate */
-h1, h2, h3, h4, h5, h6, .text-white {
+/* Standardize headings to dark slate for high contrast */
+h1, h2, h3, h4, h5, h6 {
   color: #0F172A !important;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Darken faint secondary text for crisp, easy readability */
+.text-slate-400 {
+  color: #475569 !important; /* High contrast dark slate */
+}
+.text-slate-500 {
+  color: #334155 !important; /* High contrast dark charcoal */
+}
+
+/* Clean, modern typography stack for monospace */
+.font-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
 }
 
 /* Maintain brand teal accents */
 .text-teal-400, .text-teal-500 {
-  color: #009FA6 !important;
+  color: #008389 !important;
 }
 .bg-teal-500, .bg-teal-600 {
   background-color: #009FA6 !important;

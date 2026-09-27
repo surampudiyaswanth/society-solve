@@ -27,7 +27,8 @@ import {
   TrendingUp,
   ClipboardCheck,
   ShieldBan,
-  Sparkles
+  Sparkles,
+  Rocket
 } from 'lucide-react';
 
 export default function ProblemTrackingPage() {
@@ -234,6 +235,33 @@ export default function ProblemTrackingPage() {
             <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center gap-2.5 text-xs text-amber-400/90">
               <ShieldBan className="w-4 h-4 text-amber-400 shrink-0" />
               <span>Admin Override Revoked: Steps 8, 9, and 10 require ground verification by Citizens or Government authorities.</span>
+            </div>
+          )}
+
+          {/* Step #7 Action: Industry Pilot Authorization */}
+          {['Solution Development', 'Industry Collaboration'].includes(problem.status) && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-slate-900/90 border border-purple-500/30">
+              <div className="space-y-1">
+                <span className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-purple-400" /> Step #7: Authorize Field Pilot Implementation (75%)
+                </span>
+                <p className="text-xs text-slate-400">
+                  Authorize corporate CSR capital & equipment to transition university lab models into community field pilot.
+                </p>
+              </div>
+
+              {['industry', 'admin'].includes(user?.role) ? (
+                <button
+                  onClick={() => handleAdvanceStage('Pilot Implementation', 'Industry partner authorized deployment tranche. On-ground field pilot initiated.')}
+                  disabled={updatingStage}
+                  className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg transition cursor-pointer flex items-center gap-1.5 shrink-0"
+                >
+                  {updatingStage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Rocket className="w-3.5 h-3.5" />}
+                  Deploy Step #7 Pilot (75%)
+                </button>
+              ) : (
+                <span className="text-xs text-slate-500 italic">Restricted to Industry partners & Admin</span>
+              )}
             </div>
           )}
 

@@ -31,6 +31,8 @@ router
 
 router.get('/my', protect, getMyProblems);
 router.put('/:id/status', protect, updateProblemStatus);
+router.patch('/:id/stage', protect, updateProblemStatus);
+router.put('/:id/stage', protect, updateProblemStatus);
 router.get('/:id', getProblemById);
 
 export default router;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getProblems } from '../services/problemService';
+import { getProblems, updateProblemStatus } from '../services/problemService';
 import { getSolutions } from '../services/solutionService';
 import { getMyCollaborations, getIndustryStats } from '../services/collaborationService';
 import SponsorSolutionModal from '../components/forms/SponsorSolutionModal';
@@ -85,31 +85,22 @@ export default function IndustryDashboard() {
 
   // Safe handler to advance to Stage 7
   const handleAuthorizePilot = async (solution) => {
-    const targetId = solution.problemId || solution._id;
+    const targetId = solution.problemId || solution.problem?._id || solution._id;
     if (!targetId) return;
 
     try {
       setDeployingId(targetId);
 
-      // Updates via backend API
-      const token = localStorage.getItem('token');
-      await fetch(`/api/problems/${targetId}/stage`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({
-          stage: 7,
-          status: 'Pilot Implementation',
-          note: 'Industry sponsor authorized deployment tranche. On-site field pilot initiated.'
-        })
-      }).catch((e) => console.warn('Stage update request:', e));
+      await updateProblemStatus(targetId, {
+        status: 'Pilot Implementation',
+        note: 'Industry sponsor authorized deployment tranche. On-site field pilot initiated with university innovators.'
+      });
 
       await loadData();
-      alert(`Stage 7: Pilot Implementation authorized for ${targetId}!`);
+      alert(`Stage 7: Pilot Implementation successfully authorized for ${targetId}!`);
     } catch (err) {
       console.error('Failed to trigger pilot deployment:', err);
+      alert(err.message || 'Failed to trigger pilot deployment');
     } finally {
       setDeployingId(null);
     }

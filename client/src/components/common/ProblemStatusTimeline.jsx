@@ -70,12 +70,12 @@ export default function ProblemStatusTimeline({ currentStatus = 'Submitted', tim
           return (
             <div
               key={stage.id}
-              className={`p-3 rounded-xl border transition-all flex flex-col justify-between relative ${
+              className={`p-3 rounded-xl border-2 transition-all flex flex-col justify-between relative shadow-sm ${
                 isCurrent
                   ? 'bg-teal-950/80 border-teal-500 ring-2 ring-teal-500/30 shadow-lg shadow-teal-500/10'
                   : isPassed
-                  ? 'bg-slate-900/90 border-slate-700 text-slate-300'
-                  : 'bg-slate-950/50 border-slate-800/80 text-slate-500'
+                  ? 'bg-white border-slate-700 text-slate-800'
+                  : 'bg-white border-slate-700 text-slate-500'
               }`}
             >
               <div>
@@ -120,24 +120,24 @@ export default function ProblemStatusTimeline({ currentStatus = 'Submitted', tim
       </div>
 
       {/* Active Milestone Card */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+      <div className="bg-white border-2 border-slate-700 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm">
         <div className="flex items-center space-x-3">
-          <div className="p-2.5 rounded-xl bg-teal-950 text-teal-400 border border-teal-800 shrink-0">
+          <div className="p-2.5 rounded-xl bg-teal-950 text-teal-400 border-2 border-teal-800 shrink-0">
             <Clock className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <span className="text-slate-400 font-mono">Current Active Milestone:</span>
-              <span className="font-bold text-teal-300 text-sm">{currentStatus}</span>
+              <span className="text-slate-500 font-mono font-medium">Current Active Milestone:</span>
+              <span className="font-bold text-teal-600 text-sm">{currentStatus}</span>
             </div>
-            <p className="text-slate-400 text-xs mt-0.5">
+            <p className="text-slate-500 text-xs mt-0.5 font-medium">
               {WORKFLOW_STAGES[activeIdx]?.desc}
             </p>
           </div>
         </div>
 
         {getTimelineEvent(currentStatus)?.note && (
-          <div className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-[11px] font-mono">
+          <div className="px-3.5 py-2 rounded-xl bg-slate-50 border-2 border-slate-700 text-slate-800 text-[11px] font-mono shadow-sm">
             Note: "{getTimelineEvent(currentStatus).note}"
           </div>
         )}

@@ -3,44 +3,76 @@
 @tailwind utilities;
 
 :root {
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   color-scheme: light;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: #F3F7FA;
-  color: #0F172A;
+  background-color: #F3F7FA !important;
+  color: #0F172A !important;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom smooth scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* Force dark card backgrounds and containers to white across all pages */
+.bg-slate-900,
+.bg-slate-950,
+.bg-slate-900\/80,
+.bg-slate-950\/80,
+.bg-gray-900,
+.bg-black {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
 }
 
-::-webkit-scrollbar-track {
-  background: #F1F5F9;
+/* Dark, well-defined borderlines for all cards, containers, and boxes */
+.border-slate-800,
+.border-slate-700,
+.border-slate-900,
+.border-slate-600,
+.border-slate-500,
+.border-slate-400,
+.border-slate-300,
+.border-slate-200,
+.border-slate-100,
+.border-gray-800,
+.border-gray-700,
+.border-gray-600,
+.border-gray-500,
+.border-gray-400,
+.border-gray-300,
+.border-gray-200,
+.border-slate-200\/80 {
+  border-color: #334155 !important; /* Prominent dark slate-700 border */
 }
 
-::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
-  border-radius: 9999px;
+/* Ensure standard container borders are dark and crisp */
+.border:not([class*="border-teal"]):not([class*="border-purple"]):not([class*="border-rose"]):not([class*="border-emerald"]):not([class*="border-cyan"]):not([class*="border-amber"]):not([class*="border-blue"]) {
+  border-color: #334155 !important;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
-}
-
-/* Base input & interactive focus rings */
+/* Enforce dark defined borders for input boxes, selects, and textareas */
 input, textarea, select {
-  accent-color: #009FA6;
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border-color: #475569 !important;
 }
 
-::selection {
-  background-color: #CCFBF1;
-  color: #0F766E;
+input::placeholder, textarea::placeholder {
+  color: #94A3B8 !important;
+}
+
+/* Standardize headings from inverted white to dark slate */
+h1, h2, h3, h4, h5, h6, .text-white {
+  color: #0F172A !important;
+}
+
+/* Maintain brand teal accents */
+.text-teal-400, .text-teal-500 {
+  color: #009FA6 !important;
+}
+.bg-teal-500, .bg-teal-600 {
+  background-color: #009FA6 !important;
+  color: #FFFFFF !important;
 }

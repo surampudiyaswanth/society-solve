@@ -163,7 +163,7 @@ export default function ProblemTrackingPage() {
       </div>
 
       {/* Hero Header Card */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative overflow-hidden">
+      <div className="bg-slate-900/90 border-2 border-slate-700 rounded-3xl p-6 sm:p-8 space-y-6 shadow-md relative overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center space-x-2.5">
             <span className="text-xs font-mono font-black text-teal-400 bg-teal-950/90 px-3 py-1 rounded-xl border border-teal-800/80 tracking-wider">
@@ -210,14 +210,14 @@ export default function ProblemTrackingPage() {
       </div>
 
       {/* 10-Stage Progression Timeline Section */}
-      <section className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+      <section className="bg-slate-900/90 border-2 border-slate-700 rounded-3xl p-6 sm:p-8 shadow-md space-y-6">
         <ProblemStatusTimeline
           currentStatus={problem.status}
           timeline={problem.timeline || []}
         />
 
         {/* Milestone Status Action Panel */}
-        <div className="bg-slate-950/90 border border-slate-800 rounded-2xl p-5 mt-6 space-y-4">
+        <div className="bg-slate-950/90 border-2 border-slate-700 rounded-2xl p-5 mt-6 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-teal-400" />
@@ -379,7 +379,7 @@ export default function ProblemTrackingPage() {
 
           {/* Step #10 Action: Government Verification & Archival */}
           {problem.status === 'Impact Measured' && (
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-slate-900 border border-emerald-500/30">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-slate-900 border-2 border-emerald-600 shadow-sm">
               <div className="space-y-1">
                 <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5 uppercase tracking-wide">
                   <Building className="w-4 h-4" /> Step #10: Final Municipal Verification & Sign-Off
